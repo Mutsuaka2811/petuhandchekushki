@@ -159,7 +159,7 @@ function perfTick(ms) {
 
 function resize() {
     var tc = window.matchMedia ? window.matchMedia('(pointer: coarse)').matches : false;
-    dpr = Math.max(0.5, Math.min(window.devicePixelRatio || 1, tc ? 1.5 : 2) * PERF.q);
+    dpr = Math.max(0.5, Math.min(window.devicePixelRatio || 1, tc ? 1.25 : 1.5) * PERF.q);
     W = window.innerWidth; H = window.innerHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     touch = window.matchMedia ? window.matchMedia('(pointer: coarse)').matches : ('ontouchstart' in window);

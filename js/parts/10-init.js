@@ -1945,9 +1945,18 @@ if (!socket) {
     byId('closeLobby').addEventListener('click', closeLobby);
     byId('btnPlay').addEventListener('click', startPlay);
     byId('btnLeave').addEventListener('click', function () { socket.emit('leave'); });
-    byId('btnCreate').addEventListener('click', function () { net.err = ''; if (mpBlocked()) return; socket.emit('create', { max: +byId('lbSize').value || 10 }); });
-    byId('btnCode').addEventListener('click', function () { var c = byId('codeInput').value.trim().toUpperCase(); if (c) { net.err = ''; if (mpBlocked()) return; socket.emit('enter', { c: c }); } });
+    byId('btnCreate').addEventListener('click', function () { net.err = ''; socket.emit('create', { max: +byId('lbSize').value || 10 }); });
+    byId('btnCode').addEventListener('click', function () { var c = byId('codeInput').value.trim().toUpperCase(); if (c) { net.err = ''; socket.emit('enter', { c: c }); } });
     (function () { var sel = byId('lbSize'); for (var n = 1; n <= MAX_ROOM; n++) { var op = document.createElement('option'); op.value = n; op.textContent = n; if (n === 10) op.selected = true; sel.appendChild(op); } })();
+    (function () {
+      var sel = byId('lbSize'), val = byId('lbSizeBtn');
+      if (!sel || !val) return;
+      function show() { val.textContent = sel.value || '10'; }
+      byId('lbMinus').addEventListener('click', function () { sel.value = String(Math.max(1, (+sel.value || 10) - 1)); show(); });
+      byId('lbPlus').addEventListener('click', function () { sel.value = String(Math.min(MAX_ROOM, (+sel.value || 10) + 1)); show(); });
+      sel.addEventListener('change', show);
+      show();
+    })();
     byId('chatSend').addEventListener('click', sendChat);
     byId('chatInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
     byId('lbNick').addEventListener('change', function () {
@@ -2024,12 +2033,13 @@ setInterval(function () { var show = !(paused || cs.on || fin.on || boss.on || e
 var postFx = createPostFx({
     get ctx() { return ctx; }, get dpr() { return dpr; },
     get W() { return W; }, get H() { return H; },
-    get t() { return t; }, get GX() { return GX; }, get music() { return music; }
+    get t() { return t; }, get GX() { return GX; }, get music() { return music; },
+    get PERF() { return PERF; }
   });
 
 var _shc = {}, _shn = 0;
 
-var SPR = { map: new Map(), res: 0, bytes: 0, max: 56e6 };
+var SPR = { map: new Map(), res: 0, bytes: 0, max: 24e6 };
 
 var _birch0 = birch, _oak0 = oak, _pine0 = pine, _bush0 = bush, _rock0 = rock;
 

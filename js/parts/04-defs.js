@@ -1853,7 +1853,7 @@ function renderLobby() {
         inf.appendChild(nm); inf.appendChild(sb);
         var cnt = document.createElement('span'); cnt.className = 'lcnt'; cnt.textContent = r.n + '/' + r.max;
         var b = document.createElement('button'); b.type = 'button'; b.className = 'lbtn'; b.textContent = r.n >= r.max ? 'Полно' : 'Войти'; b.disabled = r.n >= r.max;
-        b.addEventListener('click', function () { net.err = ''; if (mpBlocked()) return; socket.emit('enter', { c: r.c }); });
+        b.addEventListener('click', function () { net.err = ''; socket.emit('enter', { c: r.c }); });
         row.appendChild(inf); row.appendChild(cnt); row.appendChild(b); list.appendChild(row);
       });
     } else {
