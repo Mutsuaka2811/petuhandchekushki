@@ -404,6 +404,8 @@ function drawHeli(x, y, s, tt, lp, civ, col) {
 
 function frame(now) {
     requestAnimationFrame(frame);
+    // Скрытая вкладка не должна рисовать кадры и греть GPU.
+    if (document.hidden) { last = now; return; }
     perfTick(now - last); playTick((now - last) / 1000);
     FPSV.n++;
     if (!FPSV.t0) FPSV.t0 = now;
