@@ -121,6 +121,10 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.match(css.headers.get('content-type'), /text\/css/);
   assert.match(await css.text(), /url\("\/assets\/img\/coin\.webp"\)/);
 
+  const uiCss = await fetch(`${BASE}/css/ui.css`);
+  assert.equal(uiCss.status, 200);
+  assert.match(await uiCss.text(), /\.stabnav|\.pad \.grp|\.bossbar/);
+
   const img = await fetch(`${BASE}/assets/img/wool.webp`);
   assert.equal(img.status, 200);
   assert.match(img.headers.get('content-type'), /image\/webp/);
