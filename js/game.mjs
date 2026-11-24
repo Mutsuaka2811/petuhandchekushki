@@ -16568,13 +16568,15 @@ import { createSettings } from './core/settings.mjs';
     var bw = mxx - mnx, bh = mxy - mny, g = ctx.createRadialGradient(mnx + bw * 0.3, mny + bh * 0.24, 3, mnx + bw * 0.5, mny + bh * 0.55, Math.max(bw, bh) * 0.78);
     g.addColorStop(0, shadeC(base, 0.34)); g.addColorStop(0.45, base); g.addColorStop(1, shadeC(base, -0.34));
     ctx.fillStyle = g; ctx.fillRect(mnx - 4, mny - 4, bw + 8, bh + 8);
-    ctx.lineWidth = 2.4;
-    for (i = 0; i < cs.length; i++) {
-      c = cs[i];
-      ctx.strokeStyle = 'rgba(255,255,255,.26)'; ctx.beginPath(); ctx.arc(c.x - c.r * 0.08, c.y - c.r * 0.1, c.r * 0.78, 3.4, 5.1); ctx.stroke();
-      ctx.strokeStyle = 'rgba(8,24,10,.26)'; ctx.beginPath(); ctx.arc(c.x + c.r * 0.06, c.y + c.r * 0.08, c.r * 0.82, 0.25, 2.4); ctx.stroke();
+    if (!o.clean) {
+      ctx.lineWidth = 2.4;
+      for (i = 0; i < cs.length; i++) {
+        c = cs[i];
+        ctx.strokeStyle = 'rgba(255,255,255,.26)'; ctx.beginPath(); ctx.arc(c.x - c.r * 0.08, c.y - c.r * 0.1, c.r * 0.78, 3.4, 5.1); ctx.stroke();
+        ctx.strokeStyle = 'rgba(8,24,10,.26)'; ctx.beginPath(); ctx.arc(c.x + c.r * 0.06, c.y + c.r * 0.08, c.r * 0.82, 0.25, 2.4); ctx.stroke();
+      }
     }
-    var rr = rng((o.seed | 0) + 3), n = Math.min(40, Math.round(bw * bh / 900)), lx, ly;
+    var rr = rng((o.seed | 0) + 3), n = Math.min(o.clean ? 18 : 40, Math.round(bw * bh / 900)), lx, ly;
     for (i = 0; i < n; i++) { lx = mnx + rr() * bw; ly = mny + rr() * bh; ctx.fillStyle = (i % 3) ? shadeC(base, 0.4) : shadeC(base, -0.42); ctx.globalAlpha = 0.5; ctx.beginPath(); ctx.ellipse(lx, ly, 3.4, 1.7, rr() * 3, 0, 6.3); ctx.fill(); }
     ctx.globalAlpha = 1; ctx.restore();
   }
@@ -16694,7 +16696,7 @@ import { createSettings } from './core/settings.mjs';
   roundShape = function (x, y, h, c1, c2) {
     if (!GX) return _roundShape0(x, y, h, c1, c2);
     ctx.fillStyle = '#4e331f'; ctx.fillRect(x - h * 0.045, y - h * 0.44, h * 0.09, h * 0.44);
-    gxBlob([{ x: x, y: y - h * 0.62, r: h * 0.31 }, { x: x - h * 0.2, y: y - h * 0.52, r: h * 0.19 }, { x: x + h * 0.2, y: y - h * 0.53, r: h * 0.2 }, { x: x, y: y - h * 0.46, r: h * 0.2 }], c1, { lw: Math.max(1.6, h * 0.02), seed: (x | 0) });
+    gxBlob([{ x: x, y: y - h * 0.62, r: h * 0.31 }, { x: x - h * 0.2, y: y - h * 0.52, r: h * 0.19 }, { x: x + h * 0.2, y: y - h * 0.53, r: h * 0.2 }, { x: x, y: y - h * 0.46, r: h * 0.2 }], c1, { lw: Math.max(1.6, h * 0.02), seed: (x | 0), clean: true });
   };
   parallaxSkyline = function (par, base, hmin, hspan, color, seed) {
     if (!GX) return _parallaxSkyline0(par, base, hmin, hspan, color, seed);
@@ -16758,21 +16760,54 @@ import { createSettings } from './core/settings.mjs';
     gxInk(Math.max(2, h * 0.014)); ctx.stroke();
     gxTube([[x - 1, gY - h * 0.5], [x - h * 0.1, gY - h * 0.58], [x - h * 0.2, gY - h * 0.66]], tw * 0.5, '#6a4a2c');
     gxTube([[x + 1, gY - h * 0.52], [x + h * 0.1, gY - h * 0.6], [x + h * 0.19, gY - h * 0.68]], tw * 0.46, '#6a4a2c');
-    for (i = 0; i < 9; i++) cs.push({ x: x + (r() - 0.5) * h * 0.62, y: cy + (r() - 0.5) * h * 0.3 + (i % 3) * 3, r: h * (0.13 + r() * 0.07) });
-    cs.push({ x: x, y: cy - h * 0.12, r: h * 0.17 });
-    gxBlob(cs, cols[Math.floor(seed) % 3], { lw: Math.max(2.4, h * 0.02), seed: Math.floor(seed) });
+    var crown = [
+      { x: x, y: cy - h * 0.1, r: h * 0.23 },
+      { x: x - h * 0.18, y: cy + h * 0.03, r: h * 0.19 },
+      { x: x + h * 0.18, y: cy + h * 0.03, r: h * 0.19 },
+      { x: x - h * 0.08, y: cy - h * 0.2, r: h * 0.17 },
+      { x: x + h * 0.09, y: cy - h * 0.19, r: h * 0.17 }
+    ];
+    gxBlob(crown, cols[Math.floor(seed) % 3], { lw: Math.max(2.4, h * 0.02), seed: Math.floor(seed), clean: true });
   }
   function gxBirch(x, h, seed) {
-    var tw = h * 0.06, r = rng(Math.floor(seed) + 5), i, cy = gY - h * 0.78, cs = [], cols = ['#79c84a', '#8ad656', '#6ab83e'];
-    gxShadow(x, gY + 4, h * 0.22, 0.8);
-    for (i = 0; i < 4; i++) gxTube([[x, gY - h * (0.48 + i * 0.1)], [x + (i % 2 ? 1 : -1) * h * 0.1, gY - h * (0.62 + i * 0.07)]], tw * 0.5, '#e6e2d2');
-    ctx.beginPath(); ctx.moveTo(x - tw * 0.7, gY + 2); ctx.lineTo(x - tw * 0.5, gY - h * 0.9); ctx.lineTo(x + tw * 0.5, gY - h * 0.9); ctx.lineTo(x + tw * 0.7, gY + 2); ctx.closePath();
-    ctx.fillStyle = gxLG(x - tw, 0, x + tw, 0, '#fffdf4', '#ece8d8', '#b7b29c'); ctx.fill();
-    ctx.save(); ctx.clip(); ctx.fillStyle = '#2a2630';
-    for (i = 0; i < 10; i++) { var yy = gY - h * (0.06 + r() * 0.78), ww = tw * (0.35 + r() * 0.6); ctx.fillRect(x + (r() < 0.5 ? -tw * 0.7 : tw * 0.7 - ww), yy, ww, 2.6 + r() * 3); } ctx.restore();
-    gxInk(1.8); ctx.stroke();
-    for (i = 0; i < 9; i++) { var a = r() * 6.28, rd = r() * h * 0.2; cs.push({ x: x + Math.cos(a) * rd * 1.2, y: cy + Math.sin(a) * rd * 0.9, r: h * (0.1 + r() * 0.06) }); }
-    gxBlob(cs, cols[Math.floor(seed) % 3], { lw: Math.max(2, h * 0.016), seed: Math.floor(seed) });
+    var tw = h * 0.055, r = rng(Math.floor(seed) + 5), i, cy = gY - h * 0.8;
+    var cols = ['#79c84a', '#8ad656', '#6ab83e'];
+    gxShadow(x, gY + 4, h * 0.2, 0.85);
+
+    // Тонкие ветки прячем под крону — они не должны торчать голыми.
+    for (i = 0; i < 3; i++) {
+      var sy = gY - h * (0.56 + i * 0.11), dir = i % 2 ? 1 : -1;
+      gxTube([[x, sy], [x + dir * h * 0.06, sy - h * 0.05], [x + dir * h * 0.11, sy - h * 0.08]], tw * 0.32, '#ded9c6');
+    }
+
+    // Ствол: слегка сужается кверху, без резких прямоугольных полос.
+    ctx.beginPath();
+    ctx.moveTo(x - tw * 0.82, gY + 2);
+    ctx.lineTo(x - tw * 0.42, gY - h * 0.9);
+    ctx.lineTo(x + tw * 0.42, gY - h * 0.9);
+    ctx.lineTo(x + tw * 0.82, gY + 2);
+    ctx.closePath();
+    ctx.fillStyle = gxLG(x - tw, 0, x + tw, 0, '#fffef7', '#efeade', '#bcb6a2'); ctx.fill();
+    ctx.save(); ctx.clip();
+    for (i = 0; i < 6; i++) {
+      var yy = gY - h * (0.12 + r() * 0.7), ww = tw * (0.18 + r() * 0.3);
+      ctx.fillStyle = 'rgba(45,42,52,.7)';
+      ctx.beginPath();
+      ctx.ellipse(x + (r() < 0.5 ? -tw * 0.45 : tw * 0.45), yy, ww * 0.5, 1.5 + r() * 1.5, -0.15 + r() * 0.3, 0, 6.3);
+      ctx.fill();
+    }
+    ctx.restore();
+    gxInk(1.5); ctx.stroke();
+
+    // Крона из пяти аккуратных «подушек» вместо девяти разбросанных кружков.
+    var crown = [
+      { x: x, y: cy - h * 0.08, r: h * 0.21 },
+      { x: x - h * 0.15, y: cy + h * 0.02, r: h * 0.17 },
+      { x: x + h * 0.15, y: cy + h * 0.02, r: h * 0.17 },
+      { x: x - h * 0.07, y: cy - h * 0.18, r: h * 0.15 },
+      { x: x + h * 0.08, y: cy - h * 0.17, r: h * 0.15 }
+    ];
+    gxBlob(crown, cols[Math.floor(seed) % 3], { lw: Math.max(2, h * 0.015), seed: Math.floor(seed), clean: true });
   }
   function gxPineT(x, h) {
     gxShadow(x, gY + 4, h * 0.26, 0.8);
@@ -16782,7 +16817,7 @@ import { createSettings } from './core/settings.mjs';
   function gxBushHD(x, s, bry) {
     var y = gY + 2, cs = [{ x: x, y: y - 14 * s, r: 17 * s }, { x: x + 21 * s, y: y - 10 * s, r: 13 * s }, { x: x - 21 * s, y: y - 9 * s, r: 12 * s }, { x: x - 4 * s, y: y - 22 * s, r: 12.5 * s }, { x: x + 9 * s, y: y - 20 * s, r: 11 * s }];
     gxShadow(x, gY + 4, 32 * s, 0.8);
-    gxBlob(cs, '#4aa63a', { lw: Math.max(2.2, 2.6 * s), seed: (x * 3) | 0 });
+    gxBlob(cs, '#4aa63a', { lw: Math.max(2.2, 2.6 * s), seed: (x * 3) | 0, clean: true });
     if (bry) { for (var b = 0; b < 6; b++) { var bx = x - 18 * s + b * 7.5 * s, by = y - (10 + (b % 3) * 7) * s; ctx.fillStyle = '#e8454f'; ctx.beginPath(); ctx.arc(bx, by, 2.8 * s, 0, 6.3); ctx.fill(); gxInk(1.1); ctx.stroke(); ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(bx - 1, by - 1.4, 1.2, 1.2); } }
   }
   function gxRockHD(x, s) {
@@ -16851,7 +16886,7 @@ import { createSettings } from './core/settings.mjs';
     gxPanel(x, gY - 30, w, 5, '#d9b27a', { lw: 1.4 }); gxPanel(x, gY - 14, w, 5, '#d9b27a', { lw: 1.4 });
     for (i = 0; i < n * 3 + 1; i++) { var px = x + i * 12, ht = 36 + ((i * 7) % 3); gxPanel(px - 4, gY - ht, 8, ht, '#f0d49f', { lw: 1.4 }); ctx.fillStyle = '#f0d49f'; ctx.beginPath(); ctx.moveTo(px - 4, gY - ht); ctx.lineTo(px, gY - ht - 5); ctx.lineTo(px + 4, gY - ht); ctx.fill(); gxInk(1.4); ctx.stroke(); }
   }
-  function gxHedge(x, w) { var cs = [], i; for (i = 0; i * 22 < w; i++) cs.push({ x: x + 11 + i * 22, y: gY - 18 - (i % 2) * 4, r: 15 }); gxShadow(x + w / 2, gY + 3, w * 0.55, 0.6); gxBlob(cs, '#3f9a3a', { lw: 2.4, seed: (x | 0) }); }
+  function gxHedge(x, w) { var cs = [], i; for (i = 0; i * 22 < w; i++) cs.push({ x: x + 11 + i * 22, y: gY - 18 - (i % 2) * 4, r: 15 }); gxShadow(x + w / 2, gY + 3, w * 0.55, 0.6); gxBlob(cs, '#3f9a3a', { lw: 2.4, seed: (x | 0), clean: true }); }
   function gxFlowers(x, n, seed) {
     var r = rng((seed | 0) + 9), i, cols = ['#ff6fa0', '#ffd23f', '#ffffff', '#ff9a4a', '#b58cff'];
     for (i = 0; i < n; i++) { var fx = x + (r() - 0.5) * n * 9, fh = 10 + r() * 14, c = cols[Math.floor(r() * 5)]; ctx.strokeStyle = '#2f7a2a'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(fx, gY + 2); ctx.quadraticCurveTo(fx + 2, gY - fh * 0.5, fx, gY - fh); ctx.stroke(); ctx.fillStyle = c; ctx.beginPath(); for (var p = 0; p < 5; p++) { var pa = p * 1.2566; ctx.moveTo(fx + Math.cos(pa) * 3.4 + 2.4, gY - fh + Math.sin(pa) * 3.4); ctx.arc(fx + Math.cos(pa) * 3.4, gY - fh + Math.sin(pa) * 3.4, 2.4, 0, 6.3); } ctx.fill(); ctx.fillStyle = '#ffe27a'; ctx.beginPath(); ctx.arc(fx, gY - fh, 1.8, 0, 6.3); ctx.fill(); }
