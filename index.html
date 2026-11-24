@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="/css/overlays.css">
+<script src="/socket.io/socket.io.js"></script>
+<meta charset="utf-8">
+<title>Петух и чекушки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Rubik:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/game.css">
+</head>
+<body>
+<canvas id="c" aria-label="Игровой мир"></canvas>
+<div id="hurt"></div>
+
+<button id="hudArrow" type="button" aria-label="Скрыть или показать баланс и чекушки"><span>&#8249;</span></button>
+<div class="hudcol" id="hudcol">
+<div class="hudwrap" id="hudwrap">
+<div class="hud" aria-live="polite">
+  <div class="chip" title="Чекушки в руках"><img id="hudBottle" alt="Чекушки"><span id="nCarry">0</span></div>
+  <div class="chip" title="Чикен ган коины"><span class="coin"></span><span id="nCoins">0</span></div>
+  <div class="chip" id="woolChip" title="Стекловата в руках" hidden><img id="hudWool" alt="Стекловата"><span id="nWool">0</span></div>
+  <div class="chip" id="cleanChip" title="Помытые чекушки в руках" hidden><span class="drop">💧</span><span id="nClean">0</span></div>
+</div>
+<div class="row2">
+  <div class="rate" id="noSig" title="Нет связи: курс виден только в городе" hidden>&#128245; нет связи</div>
+  <div class="rate" id="rateChip" title="Курс чекушки в Чикен ган коинах"><span class="coin"></span><span id="rateNum">5</span><span class="pc" id="ratePc"></span></div>
+ <div class="rate mini" id="phoneMini" title="Телефон и биржа Чекушка-коин (клавиша P)" hidden role="button" tabindex="0">&#128241; <span id="phTxt">ЧКН</span></div>
+  <div class="rate mini" id="nutMini" title="Орешки" hidden><span class="em">&#129372;</span><span id="nNut">0</span></div>
+  <div class="rate mini" id="armyMini" title="Армия белок" hidden><span class="em">&#128063;</span><span id="nArmy">0</span></div>
+  <div class="rate mini" id="fuelMini" title="Бензин в баке автобуса" hidden>&#9981; <span id="nFuel"></span></div>
+  <div class="rate mini" id="netMini" title="Мультиплеер" hidden>&#127760; <span id="netTxt"></span></div>
+  <div class="rate mini" id="chatMini" title="Быстрый чат (клавиша T)" hidden>&#128172; чат</div>
+  <div class="rate mini" id="superMini" title="Супер-Спирт: +15% к выручке в магазине за каждую" hidden><span class="em"><img id="hudSuper" alt="Супер-Спирт"></span><span id="nSuper">0</span></div>
+</div>
+</div>
+<div class="perfchip" id="perfChip" hidden></div>
+<div class="evchip" id="evChip" hidden></div>
+<div class="bossbar" id="bossBar" hidden>
+  <div class="bt"><span id="bossName">Хоумлендер-Петух</span><span id="bossTxt"></span><span id="bossTime"></span></div>
+  <div class="bb"><div id="bossFill"></div></div>
+  <div class="bs" id="bossShieldWrap" style="display:none"><div id="bossShield"></div></div>
+  <div class="ba" id="bossAmmo"></div>
+</div>
+<div class="acts">
+  <button class="airbtn" id="airBtn" type="button" hidden>&#9992; Аирдроп</button>
+  <button class="airbtn" id="specBtn" type="button" hidden></button>
+  <button class="airbtn" id="callBusBtn" type="button" hidden></button>
+</div>
+<div class="pill" id="pill" hidden>&#9664; Магазин там</div>
+</div>
+<div class="toast" id="toast"></div>
+<div id="fade" aria-hidden="true"></div>
+<div id="devBadge" hidden>РЕЖИМ РАЗРАБОТЧИКА · прогресс не сохраняется</div>
+<button type="button" id="fltSkip" hidden>Пропустить</button>
+<div class="whov" id="whOverlay" hidden>
+  <div class="whbox" role="dialog" aria-label="Кабинет в Белом доме">
+    <canvas id="whCv" width="640" height="360"></canvas>
+    <div class="whsay" id="whSay"></div>
+    <div class="whq" id="whQ"></div>
+    <div class="whbtns">
+      <button type="button" id="whTake" class="flbuy">Задание</button>
+      <button type="button" id="whSell" class="flbuy">Образцы</button>
+      <button type="button" id="whOut" class="flbuy out">Выйти</button>
+    </div>
+  </div>
+</div>
+<div class="whov" id="dlgOv" hidden>
+  <div class="whbox dlg" role="dialog" aria-labelledby="dlgWho">
+    <div class="dlghead"><img id="dlgImg" alt=""><div class="dlgwho" id="dlgWho"></div></div>
+    <div class="whsay" id="dlgTx"></div>
+    <div class="whq" id="dlgInfo" hidden></div>
+    <div class="whbtns" id="dlgBtns"></div>
+  </div>
+</div>
+<div class="chatfeed" id="chatFeed" aria-live="polite"></div>
+<div class="qchat" id="qchat" hidden><input id="qchatInput" type="text" maxlength="120" placeholder="Сообщение, Enter — отправить" autocomplete="off" enterkeyhint="send"><button id="qchatSend" type="button" aria-label="Отправить">&#10148;</button></div>
+<div class="reward" id="reward" aria-hidden="true"><img id="rewardImg" alt=""><div class="rt">Супер-Спирт</div><div class="rs">+15% к выручке в магазине</div></div>
+<div class="freeze-note" id="freezeNote" hidden><section class="freeze-card" role="dialog" aria-modal="true" aria-labelledby="freezeTitle"><h2 id="freezeTitle">Важное объявление автора</h2><p>Игра «Петух и чекушки» замораживается на время.</p><p><b>Почему?</b><br>Claude заморозил мой аккаунт на подтверждение возраста, а я не могу его подтвердить.</p><p><b>Будет ли продолжение игры?</b><br>Возможно, если появится бесплатный ИИ и почти клон Claude.</p><p><b>Почему игра обновилась сейчас?</b><br>ChatGPT помог.</p><p><b>Будет ли 3D-версия «Петух и чекушки»?</b><br>Не знаю, пока не могу сказать. Если ChatGPT потянет, то, возможно.</p><p><b>Мультиплеер будет?</b><br>Не знаю. Если GPT напишет код сервера Pocket и Index, может, запущу его в последний день перед финальной заморозкой аккаунта.</p><p><b>Итог:</b><br>Мне хотелось обновлять игру и давать ей новые обновления, но из-за моего проекта про школу с одноклассниками, возможно, Claude заподозрил, что мне меньше 18, и заморозил аккаунт.</p><p>Надеюсь, что Claude изменит свою политику рано или поздно. Или ждите 10 веков, чтобы игра «Петух и чекушки» обновилась.</p><button class="freeze-close" id="freezeClose" type="button">Понятно</button></section></div>
+<div class="token-cinema" id="tokenCinema" hidden><div class="token-stage"><div class="token-rays"></div><div class="token-glow"></div><img class="token-coin" id="tokenCinemaImg" alt="Chicken Token"><div class="token-title">CHICKEN TOKEN!</div><div class="token-sub">Секретный трофей получен!<br>60 секунд появляются только мифические и секретные чекушки.</div><button class="token-collect" id="tokenCollect" type="button">ЗАБРАТЬ</button></div></div>
+
+<button class="gear invbtn" id="invBtn" type="button" aria-label="Инвентарь" title="Инвентарь (I)">&#127890;</button>
+<button class="gear apbtn" id="apBtn" type="button" aria-label="Автопилот" title="Автопилот маршрута (P)" hidden>&#129517;</button>
+<button class="gear" id="gear" type="button" aria-label="Настройки">&#9881;</button>
+
+<div id="csSkip" hidden><button id="csSkipBtn" type="button">Пропустить катсцену &#9654;&#9654;</button><div class="cap">Кнопка нужна, чтобы случайно не пропустить сцену (или нажми Esc)</div></div>
+<div class="pad" id="pad" hidden>
+  <div class="grp">
+    <button class="btn" id="bL" type="button" aria-label="Влево">&#9664;</button>
+    <button class="btn" id="bR" type="button" aria-label="Вправо">&#9654;</button>
+  </div>
+  <div class="grp r">
+    <button class="btn sell" id="bAmmo" type="button" hidden>Снаряд</button>
+    <button class="btn sell" id="bThrow" type="button" hidden>Бросить</button>
+    <button class="btn sell" id="bHarp" type="button" hidden>Гарпун</button>
+    <button class="btn sell" id="bMagic" type="button" hidden>Магия</button>
+    <button class="btn sell" id="bFeed" type="button" hidden>Орех</button>
+    <button class="btn sell" id="bSell" type="button" hidden>Сдать</button>
+    <button class="btn" id="bDn" type="button" aria-label="Вниз" hidden>&#9660;</button>
+    <button class="btn sell" id="bSonar" type="button" hidden>Сонар</button>
+    <button class="btn sell" id="bExit" type="button" hidden>Выйти</button>
+    <button class="btn" id="bJ" type="button" aria-label="Прыжок, в подлодке вверх">&#9650;</button>
+  </div>
+</div>
+
+<div class="overlay menu" id="menuOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="menuTitle">
+    <h2 id="menuTitle">Петух и чекушки</h2>
+    <button class="mbtn" id="btnSolo" type="button">&#127918; Одиночная игра</button>
+    <button class="mbtn alt" id="btnMulti" type="button">&#127760; Мультиплеер (бета)</button>
+    <button class="mbtn alt" id="btnRush" type="button">&#9876; Босс-раш (мини-режим)</button>
+    <div class="whelp" id="menuNote"></div>
+    <div class="row">
+      <span class="lbl" id="dlgStyLbl">Кино-диалоги</span>
+      <button class="switch" id="dlgStySwitch" type="button" role="switch" aria-checked="true" aria-labelledby="dlgStyLbl"></button>
+    </div>
+    <div class="sub" style="margin:0 0 4px">Включено: диалоги внизу экрана с крупным портретом и печатающимся текстом. Выключено: старое окно по центру.</div>
+    <div class="row">
+      <span class="lbl" id="gxStyLbl">HD-графика</span>
+      <button class="switch" id="gxSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="gxStyLbl"></button>
+    </div>
+    <div class="sub" style="margin:0 0 4px">Включено: новая 2D-рисовка с мягким светом, тенями и свечением. Выключено: лёгкий режим для слабых телефонов.</div>
+    <div class="sub">Скин петуха</div>
+    <div class="skins"></div>
+    <div class="sub">Аксессуары</div>
+    <div class="accs"></div>
+  </div>
+</div>
+
+<div class="overlay lobby" id="lobbyOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <h2 id="lbTitle">Мультиплеер (бета)</h2>
+    <div class="whelp" id="lbStatus"></div>
+    <div class="row"><label class="lbl" for="lbNick">Твой ник</label><input class="nick" id="lbNick" type="text" maxlength="14" autocomplete="off"></div>
+    <div class="sub">Скин петуха</div>
+    <div class="skins"></div>
+    <div class="sub">Аксессуары</div>
+    <div class="accs"></div>
+    <div id="lbAct">
+      <div class="lsize"><label for="lbSize">Игроков в лобби:</label><select id="lbSize"></select></div>
+      <button class="mbtn" id="btnCreate" type="button">&#10133; Создать лобби</button>
+      <div class="row"><input class="nick code" id="codeInput" type="text" maxlength="4" placeholder="КОД" autocomplete="off"><button class="lbtn" id="btnCode" type="button">Войти по коду</button></div>
+    </div>
+    <div class="lbl-list" id="lbList"></div>
+    <div id="lbRoom" hidden>
+      <div class="rmhead" id="rmHead"></div>
+      <div class="members" id="rmMembers"></div>
+      <div class="chatlog" id="chatLog"></div>
+      <div class="row chatrow"><input class="nick wide" id="chatInput" type="text" maxlength="120" placeholder="Сообщение" autocomplete="off" enterkeyhint="send"><button class="lbtn" id="chatSend" type="button">&#10148;</button></div>
+      <button class="mbtn" id="btnPlay" type="button">&#127918; Играть в лобби</button>
+      <button class="close" id="btnLeave" type="button">Выйти из лобби</button>
+    </div>
+    <button class="close" id="closeLobby" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="overlay" id="invOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="invTitle">
+    <h2 id="invTitle">Инвентарь</h2>
+    <div class="whelp" id="invSum"></div>
+    <div class="whelp">«−1» выбрасывает одну, «Все» всю стопку. Выброшенное ляжет на землю перед петухом.</div>
+    <div class="invlist" id="invList"></div>
+    <button class="close" id="closeInv" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="overlay" id="logOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <h2 id="logTitle">Журнал обновлений</h2>
+    <div id="logBody"></div>
+    <button class="close" id="closeLog" type="button">Назад</button>
+  </div>
+</div>
+
+<div class="overlay" id="sqOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sqTitle">
+    <h2 id="sqTitle">&#128063; Команды белкам</h2>
+    <p class="flnote" id="sqInfo"></p>
+    <div id="sqRows"></div>
+    <div class="flrow"><button type="button" id="sqFeed" class="go">Накормить армию</button></div>
+    <div class="flrow"><button type="button" id="sqDis" class="go">Распустить армию</button><button type="button" id="sqClose">Закрыть</button></div>
+  </div>
+</div>
+
+<div class="flbanner" id="flBanner" hidden></div>
+
+<div class="overlay" id="fishOverlay" hidden>
+  <div class="sheet fishsheet" role="dialog" aria-modal="true" aria-labelledby="fishTitle">
+    <h2 id="fishTitle">&#127907; Рыбалка</h2>
+    <canvas id="fishCv" width="320" height="380" aria-label="Рыбалка"></canvas>
+    <p class="flnote" id="fishMsg"></p>
+    <button type="button" id="fishBtn" class="flbuy fishbtn">Закинуть удочку</button>
+    <button class="close" id="fishClose" type="button">Закончить</button>
+  </div>
+</div>
+
+<div class="overlay" id="fshopOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fsTitle">
+    <h2 id="fsTitle">&#127907; Лавка рыбака</h2>
+    <div class="upCoins"><span class="coin"></span><span id="fsCoins">0</span><span class="cn">Чикен ган коины</span></div>
+    <div id="fsBody"></div>
+    <button class="close" id="fsClose" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="overlay" id="flOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="flTitle">
+    <h2 id="flTitle">&#9992; Рейс на Мальдивы</h2>
+    <div class="flcost"><img id="flImg" alt="Мифическая чекушка"><span id="flCost"></span></div>
+    <p class="flnote" id="flNote"></p>
+    <button type="button" id="flBuy" class="flbuy"></button>
+    <div class="flrow"><button type="button" id="flGo" class="go">Купить билет</button><button type="button" id="flNo">Отмена</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="phoneOverlay" hidden>
+  <div class="sheet phone" role="dialog" aria-modal="true" aria-labelledby="phTitle">
+    <h2 id="phTitle">&#128241; Телефон</h2>
+    <div class="upCoins"><span class="coin"></span><span id="phCoins">0</span><span class="cn">Чикен ган коины</span></div>
+    <div class="phsig" id="phSig"></div>
+    <div class="phtabs"><button type="button" id="phTabX" class="on">Биржа ЧКН</button><button type="button" id="phTabD">Мобильные данные</button></div>
+    <div id="phBody"></div>
+    <canvas id="phChart" width="440" height="170" aria-label="График цены Чекушка-коина"></canvas>
+    <button class="close" id="closePhone" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="overlay" id="upOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="upTitle">
+    <h2 id="upTitle">Гараж: улучшения</h2>
+    <div class="upCoins"><span class="coin"></span><span id="upCoins">0</span><span class="cn">Чикен ган коины</span></div>
+    <div class="ups" id="ups"></div>
+    <button class="close" id="closeUp" type="button">Закрыть</button>
+  </div>
+</div>
+
+<div class="overlay" id="busOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="busTitle">
+    <h2 id="busTitle">Куда едем?</h2>
+    <div class="upCoins"><span class="coin"></span><span id="busCoins">0</span><span class="cn">Чикен ган коины</span></div>
+    <div class="ups" id="busList"></div>
+    <button class="close" id="closeBus" type="button">Отмена</button>
+  </div>
+</div>
+
+<div class="overlay" id="washOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="washTitle">
+    <h2 id="washTitle">Мойка</h2>
+    <div class="whelp" id="washSub"></div>
+    <canvas id="washCv" width="360" height="300" aria-label="Мини-игра: оттирай грязь с чекушки"></canvas>
+    <div class="wbar"><div id="washFill"></div></div>
+    <div class="wmeta"><span id="washTime"></span><span id="washHelp"></span></div>
+    <button class="close" id="closeWash" type="button">Готово</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle">Настройки</h2>
+    <div class="row">
+      <span class="lbl" id="musicLbl">Музыка</span>
+      <button class="switch" id="musicSwitch" type="button" role="switch" aria-checked="true" aria-labelledby="musicLbl"></button>
+    </div>
+    <div class="row" style="padding-bottom:0"><label class="lbl" for="vol">Громкость музыки</label></div>
+    <input class="vol" id="vol" type="range" min="0" max="100" value="50">
+    <div class="sub">Трек</div>
+    <div class="tracks" id="tracks" role="radiogroup" aria-label="Трек"></div>
+    <div class="row" style="margin-top:6px">
+      <span class="lbl" id="sfxLbl">Звуки</span>
+      <button class="switch" id="sfxSwitch" type="button" role="switch" aria-checked="true" aria-labelledby="sfxLbl"></button>
+    </div>
+    <div class="row">
+      <span class="lbl" id="bmLbl">Боевая музыка (генерируется игрой)</span>
+      <button class="switch" id="bmSwitch" type="button" role="switch" aria-checked="true" aria-labelledby="bmLbl"></button>
+    </div>
+    <div class="row">
+      <span class="lbl" id="hqLbl">Макс. качество графики</span>
+      <button class="switch" id="hqSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="hqLbl"></button>
+    </div>
+    <div class="sub" style="margin:0 0 6px">Выключено: игра сама снижает чёткость при просадках FPS и возвращает её, когда станет плавно. Включено: всегда полная чёткость.</div>
+    <div class="row">
+      <span class="lbl" id="autoLbl">Автоподбор</span>
+      <button class="switch" id="autoSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="autoLbl"></button>
+    </div>
+    <div class="sub" style="margin:0 0 4px">Выключен: чекушки и стекловату подбираешь сам, кнопка «Подобрать» (на компьютере E). Включён: подбирается то, что отмечено ниже, когда подходишь.</div>
+    <div class="sub" style="margin:6px 0 4px">Что подбирать автоматически</div>
+    <div id="apfRows"></div>
+    <div class="sub">Скин петуха</div>
+    <div class="skins"></div>
+    <div class="sub">Аксессуары</div>
+    <div class="accs"></div>
+    <div class="row">
+      <span class="lbl" id="matLbl">Анти-мат в чате</span>
+      <button class="switch" id="matSwitch" type="button" role="switch" aria-checked="true" aria-labelledby="matLbl"></button>
+    </div>
+    <div class="sub" style="margin:0 0 4px">Включён: мат в сообщениях и никах заменяется на #. Действует только у тебя.</div>
+    <div class="row">
+      <span class="lbl" id="fpsLbl">Показывать FPS</span>
+      <button class="switch" id="fpsSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="fpsLbl"></button>
+    </div>
+    <div class="row">
+      <span class="lbl" id="pingLbl">Показывать пинг</span>
+      <button class="switch" id="pingSwitch" type="button" role="switch" aria-checked="false" aria-labelledby="pingLbl"></button>
+    </div>
+    <div class="sub" id="perfNow" style="margin:0 0 4px">Плашка с FPS и пингом появится слева вверху, под балансом.</div>
+    <div class="sub" id="playStat" style="margin:0 0 4px">Время игры считается…</div>
+    <details class="achbox" id="keysBox"><summary>&#9000; Клавиши (ПК)</summary>
+      <div class="sub" style="margin:8px 0">Нажми на кнопку клавиши, потом нажми новую. Delete: очистить, Esc: отмена. Если клавиша уже занята, она перейдёт к новому действию.</div>
+      <div id="keysList"></div>
+      <div class="sub" style="line-height:1.5">Обычно в играх: WASD или стрелки: ходьба; пробел: прыжок; E: действие; Q, F, R, V, Z: умения; I: инвентарь; T или Enter: чат; </div>
+      <button class="logbtn" id="keysReset" type="button"><span>Сбросить клавиши</span></button>
+    </details>
+    <details class="achbox" id="promoBox"><summary>&#127873; Промокоды</summary>
+      <div class="sub" style="margin:8px 0">Введи код и нажми «Активировать». Каждый код можно использовать один раз.</div>
+      <div class="promorow">
+        <input id="promoIn" type="text" maxlength="32" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Промокод" aria-label="Промокод">
+        <button class="promogo" id="promoGo" type="button">Активировать</button>
+      </div>
+      <div class="promomsg" id="promoMsg" role="status" aria-live="polite"></div>
+    </details>
+    <details class="achbox" id="devBox" hidden><summary>&#128736; Режим разработчика</summary>
+      <div class="sub" style="margin:8px 0">Выдача коинов. Пока режим включён, прогресс не сохраняется: после перезагрузки страницы всё вернётся как было.</div>
+      <div class="promorow">
+        <input id="devAmt" type="number" min="1" max="1000000000" value="10000" inputmode="numeric" aria-label="Сколько коинов выдать">
+        <button class="promogo" id="devGive" type="button">Выдать</button>
+      </div>
+      <div class="promorow">
+        <button class="promogo" type="button" data-dev="1000">+1 000</button>
+        <button class="promogo" type="button" data-dev="10000">+10 000</button>
+        <button class="promogo" type="button" data-dev="100000">+100 000</button>
+        <button class="promogo" type="button" data-dev="1000000">+1 000 000</button>
+      </div>
+      <div class="promomsg ok" id="devMsg" role="status"></div>
+    </details>
+    <details class="achbox" id="achBox"><summary id="achSum">Ачивки</summary><div id="achList"></div></details>
+    <button class="logbtn" id="btnMenu" type="button"><span>В главное меню</span></button>
+    <div class="sub" style="line-height:1.5">Управление на ПК по умолчанию (можно поменять выше): ← → или A D: ходить; ↑, W или пробел: прыжок; E или Enter: действие (подобрать, сдать, мыть, автобус, гараж); Q: аирдроп; F или клик мышью: бросить чекушку в босса; V: сменить снаряд; Z: особый аирдроп; R: дать орешек белке; I: инвентарь (выбросить чекушки); Esc: закрыть окно.</div>
+    <button class="logbtn" id="logOpen" type="button"><span>Журнал обновлений</span><span class="vb" id="verBadge"></span></button>
+    <button class="close" id="closeSheet" type="button">Готово</button>
+    <div class="resetbox">
+      <button class="reset" id="reset" type="button">Начать заново</button>
+      <div id="resetAsk" hidden>
+        <div class="msg">Стереть весь прогресс? Коины, улучшения, курс и чекушки в руках сбросятся. Настройки звука останутся.</div>
+        <div class="btns">
+          <button class="rbtn" id="resetNo" type="button">Отмена</button>
+          <button class="rbtn danger" id="resetYes" type="button">Да, стереть</button>
+        </div>
+      </div>
+    </div>
+    <div class="vline" id="cloudLine"></div>
+    <div class="vline" id="verLine"></div>
+  </div>
+</div>
+
+<script src="/js/game.js"></script>
+</body>
+</html>

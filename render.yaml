@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: petukh-i-chekushki
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MAX_CONNECTIONS
+        value: "400"
+      - key: MAX_ROOMS
+        value: "150"
