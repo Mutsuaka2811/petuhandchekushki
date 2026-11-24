@@ -116,6 +116,9 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal(assets.status, 200);
   assert.match(await assets.text(), /track-1\.m4a/);
 
+  const hudScript = await fetch(`${BASE}/js/parts/11-init.js`);
+  assert.doesNotMatch(await hudScript.text(), /st\.id = 'gxUi'|linear-gradient\(#fffdf6/, 'старая светлая HD-тема не должна перекрывать ui.css');
+
   const css = await fetch(`${BASE}/css/game.css`);
   assert.equal(css.status, 200);
   assert.match(css.headers.get('content-type'), /text\/css/);

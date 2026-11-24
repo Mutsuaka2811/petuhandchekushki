@@ -1690,73 +1690,8 @@ GXS.heaven = {
   };
 
 (function () {
-    var O = 'var(--ol)', B = 'body.gx ';
-    var css = [
-      B + '{ --ol:#1a2547; --cr:#fff8ea; --cr2:#ffeccf; --panel:#fff8ea; --line:#1a2547; --ink:#1a2547; --muted:#6a6f8c; --blue:#2f6fe0; --red:#ff5a4a; --gold:#ffc93a; --up:#1fa955; --down:#e0303b; }',
-      '@media (prefers-color-scheme: dark) { html:not([data-theme="light"]) body.gx { --ol:#0b1124; --cr:#27345a; --cr2:#1e2a4a; --panel:#27345a; --line:#0b1124; --ink:#f4f1ff; --muted:#a9b3d6; --blue:#7aa2ff; --up:#4fd98b; --down:#ff7d85; } }',
-      'html[data-theme="dark"] body.gx { --ol:#0b1124; --cr:#27345a; --cr2:#1e2a4a; --panel:#27345a; --line:#0b1124; --ink:#f4f1ff; --muted:#a9b3d6; --blue:#7aa2ff; --up:#4fd98b; --down:#ff7d85; }',
-      // ---- HUD ----
-      B + '.chip { background: linear-gradient(#fffdf6, var(--cr2)); border: 3px solid ' + O + '; box-shadow: 0 3px 0 ' + O + ', inset 0 2px 0 rgba(255,255,255,.85); color: var(--ink); }',
-      B + '.chip .coin { filter: drop-shadow(0 0 3px rgba(255,200,40,.7)); }',
-      B + '.rate { background: linear-gradient(#fffdf6, var(--cr2)); border: 3px solid ' + O + '; box-shadow: 0 2px 0 ' + O + '; color: var(--ink); }',
-      B + '.pill { background: linear-gradient(#ff866e, #e8392a); border: 3px solid ' + O + '; box-shadow: 0 3px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); border-radius: 18px; }',
-      B + '.toast { background: linear-gradient(#fffdf4, var(--cr2)); color: var(--ink); border: 3px solid ' + O + '; border-radius: 18px; box-shadow: 0 4px 0 ' + O + '; font-weight: 600; }',
-      B + '.evchip { border: 3px solid ' + O + '; box-shadow: 0 3px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); }',
-      B + '.perfchip { border: 2px solid ' + O + '; background: rgba(20,30,60,.82); }',
-      B + '.airbtn { background: linear-gradient(#ff866e, #e8392a); border: 3px solid ' + O + '; box-shadow: 0 4px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); }',
-      B + '.airbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.airbtn.no { background: linear-gradient(#6a7391, #474f6c); box-shadow: 0 4px 0 ' + O + '; }',
-      B + '.gear { background: radial-gradient(circle at 36% 28%, #ffffff, var(--cr2) 72%); border: 3px solid ' + O + '; box-shadow: 0 3px 0 ' + O + ', inset 0 2px 0 rgba(255,255,255,.8); }',
-      B + '.gear:active { transform: translateY(2px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.gear svg { width: 28px; height: 28px; display: block; }',
-      B + '.apbtn.on { background: radial-gradient(circle at 36% 28%, #b8ffd2, #3ddc84 76%); }',
-      // ---- кнопки управления ----
-      B + '.btn { background: radial-gradient(circle at 34% 24%, #8fbaff, #2f6fe0 58%, #1b45a6); border: 4px solid ' + O + '; box-shadow: 0 6px 0 ' + O + ', inset 0 3px 0 rgba(255,255,255,.5); color: #fff; text-shadow: 0 2px 0 rgba(0,0,0,.45); backdrop-filter: none; -webkit-backdrop-filter: none; transition: transform .06s, box-shadow .06s; }',
-      B + '.btn svg { width: 40px; height: 40px; display: block; }',
-      B + '#bJ { background: radial-gradient(circle at 34% 24%, #b4f59a, #3fb43a 58%, #1f7a2a); }',
-      B + '.btn.on, ' + B + '.btn:active { transform: translateY(4px); box-shadow: 0 2px 0 ' + O + ', inset 0 3px 0 rgba(255,255,255,.4); filter: brightness(1.08); }',
-      B + '.btn.sell { background: linear-gradient(#ffa05a, #ee4a2a); border-radius: 31px; }',
-      B + '.btn.sell:active, ' + B + '.btn.sell.on { background: linear-gradient(#ffb878, #f55c3a); }',
-      // ---- окна ----
-      B + '.overlay { background: radial-gradient(ellipse at 50% 35%, rgba(52,40,110,.55), rgba(8,12,30,.8)); }',
-      B + '.sheet { background-color: var(--cr); background-image: radial-gradient(rgba(26,37,71,.06) 1.5px, transparent 1.7px); background-size: 16px 16px; border: 4px solid ' + O + '; border-bottom: none; border-radius: 28px 28px 0 0; box-shadow: 0 -6px 0 rgba(26,37,71,.28); }',
-      B + '.sheet h2 { display: inline-block; background: linear-gradient(#ffdf6a, #ffb81f); color: #3a2400; border: 3px solid ' + O + '; border-radius: 16px; padding: 4px 18px 6px; box-shadow: 0 3px 0 ' + O + '; text-shadow: 0 1px 0 rgba(255,255,255,.6); transform: rotate(-1deg); margin: 2px 0 14px; }',
-      B + '.row { border-bottom: 2px dashed rgba(26,37,71,.16); }',
-      B + '.sub { color: var(--muted); }',
-      B + '.switch { width: 58px; height: 34px; border: 3px solid ' + O + '; background: #d8d0bf; box-shadow: inset 0 2px 0 rgba(0,0,0,.14); }',
-      B + '.switch::after { top: 2px; left: 2px; width: 24px; height: 24px; background: #fff; border: 3px solid ' + O + '; box-shadow: 0 2px 0 rgba(0,0,0,.25); }',
-      B + '.switch[aria-checked="true"] { background: #3fcf6a; border-color: ' + O + '; }',
-      B + '.switch[aria-checked="true"]::after { transform: translateX(24px); background: #fff; }',
-      B + '.close { background: linear-gradient(#ff8a7a, #e8392a); border: 3px solid ' + O + '; border-radius: 18px; box-shadow: 0 5px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); transition: transform .06s, box-shadow .06s; }',
-      B + '.close:active { transform: translateY(4px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.buy, ' + B + '.buy2 { background: linear-gradient(#6fe08a, #25a84a); border: 3px solid ' + O + '; border-radius: 14px; box-shadow: 0 4px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); transition: transform .06s, box-shadow .06s; }',
-      B + '.buy:active, ' + B + '.buy2:active { transform: translateY(3px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.buy.no, ' + B + '.buy2.no { background: linear-gradient(#a9adc0, #7d8298); }',
-      B + '.upc, ' + B + '.irow, ' + B + '.track, ' + B + '.logbtn, ' + B + '.lrow, ' + B + '.achbox { background: var(--cr2); border: 3px solid ' + O + '; border-radius: 16px; box-shadow: 0 3px 0 rgba(26,37,71,.35); }',
-      B + '.track[aria-checked="true"] { background: linear-gradient(#fff2b8, #ffd95a); color: #3a2400; }',
-      B + '.uptab { background: linear-gradient(#fff4d8, #ffdfa0); border: 3px solid ' + O + '; border-radius: 16px; box-shadow: 0 4px 0 ' + O + '; color: #3a2400; transition: transform .06s, box-shadow .06s; }',
-      B + '.uptab:active { transform: translateY(3px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.mbtn { background: linear-gradient(#ff8a6a, #e83a2a); border: 3px solid ' + O + '; border-radius: 18px; box-shadow: 0 5px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); transition: transform .06s, box-shadow .06s; }',
-      B + '.mbtn.alt { background: linear-gradient(#7fb0ff, #2f6fe0); }',
-      B + '.mbtn:active { transform: translateY(4px); box-shadow: 0 1px 0 ' + O + '; }',
-      B + '.mbtn:disabled, ' + B + '.lbtn:disabled { background: linear-gradient(#a9adc0, #7d8298); }',
-      B + '.lbtn { background: linear-gradient(#ff8a6a, #e83a2a); border: 3px solid ' + O + '; border-radius: 14px; box-shadow: 0 3px 0 ' + O + '; text-shadow: 0 2px 0 rgba(0,0,0,.35); }',
-      B + '.rbtn { border: 3px solid ' + O + '; border-radius: 14px; background: var(--cr2); box-shadow: 0 3px 0 ' + O + '; }',
-      B + '.rbtn.danger { background: linear-gradient(#ff8a7a, #e8392a); color: #fff; }',
-      B + '.sk { border: 3px solid ' + O + '; box-shadow: 0 2px 0 ' + O + '; }',
-      B + '.sk[aria-pressed="true"] { box-shadow: 0 0 0 3px #ffd23f, 0 2px 0 3px ' + O + '; }',
-      B + '.phtabs button { border: 3px solid ' + O + '; border-radius: 14px; background: var(--cr2); box-shadow: 0 3px 0 ' + O + '; }',
-      B + '.phtabs button.on { background: linear-gradient(#7fb0ff, #2f6fe0); color: #fff; }',
-      B + '.wbar, ' + B + '.bossbar .bb { border: 2px solid ' + O + '; }',
-      B + '#washFill { background: linear-gradient(#7fd4ff, #2f9ae0); box-shadow: inset 0 3px 0 rgba(255,255,255,.45); }',
-      // ---- полоса босса ----
-      B + '.bossbar { background: linear-gradient(#27345a, #121a36); border: 3px solid #ffd23f; box-shadow: 0 4px 0 ' + O + '; }',
-      B + '.bossbar .bb { height: 16px; border-radius: 8px; background: rgba(255,255,255,.14); }',
-      B + '#bossFill { background: linear-gradient(#ff8a6a, #e8281a); box-shadow: inset 0 3px 0 rgba(255,255,255,.4); }',
-      // ---- награда ----
-      B + '.reward .rt { text-shadow: 0 3px 0 ' + O + ', 0 0 18px rgba(255,210,60,.7); }'
-    ].join('\n');
-    try { var st = document.createElement('style'); st.id = 'gxUi'; st.textContent = css; document.head.appendChild(st); } catch (e) {}
+    // Старая встроенная светлая тема HD удалена: стили задаёт css/ui.css.
+
     // ---- SVG-иконки вместо символов ----
     function chev(rot) { var d = 'M20 5L9 16l11 11'; return '<svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(' + rot + ' 16 16)"><path d="' + d + '" stroke="#1a2547" stroke-width="8.4"/><path d="' + d + '" stroke="#fff" stroke-width="4.4"/></g></svg>'; }
     var gear = (function () { var t = '', i; for (i = 0; i < 8; i++) t += '<rect x="13" y="1.6" width="6" height="8" rx="2" transform="rotate(' + i * 45 + ' 16 16)"/>'; return '<svg viewBox="0 0 32 32" fill="#ffd23f" stroke="#1a2547" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true">' + t + '<circle cx="16" cy="16" r="9.6"/><circle cx="16" cy="16" r="3.8" fill="#fff8ea"/></svg>'; })();
