@@ -1689,24 +1689,7 @@ GXS.heaven = {
     }
   };
 
-(function () {
-    // Старая встроенная светлая тема HD удалена: стили задаёт css/ui.css.
-
-    // ---- SVG-иконки вместо символов ----
-    function chev(rot) { var d = 'M20 5L9 16l11 11'; return '<svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(' + rot + ' 16 16)"><path d="' + d + '" stroke="#1a2547" stroke-width="8.4"/><path d="' + d + '" stroke="#fff" stroke-width="4.4"/></g></svg>'; }
-    var gear = (function () { var t = '', i; for (i = 0; i < 8; i++) t += '<rect x="13" y="1.6" width="6" height="8" rx="2" transform="rotate(' + i * 45 + ' 16 16)"/>'; return '<svg viewBox="0 0 32 32" fill="#ffd23f" stroke="#1a2547" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true">' + t + '<circle cx="16" cy="16" r="9.6"/><circle cx="16" cy="16" r="3.8" fill="#fff8ea"/></svg>'; })();
-    var SV = {
-      gear: gear,
-      bag: '<svg viewBox="0 0 32 32" stroke="#1a2547" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M13 5.5a3 3 0 0 1 6 0" fill="none"/><path d="M8.5 13a7.5 7.5 0 0 1 15 0v13a3 3 0 0 1-3 3h-9a3 3 0 0 1-3-3z" fill="#ff7a5a"/><rect x="11.5" y="18" width="9" height="7" rx="2" fill="#ffd23f"/><path d="M11 13.2h10" fill="none"/></svg>',
-      comp: '<svg viewBox="0 0 32 32" stroke="#1a2547" stroke-width="2.4" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="12.4" fill="#fff8ea"/><path d="M16 6.4l4.2 9.6h-8.4z" fill="#ff5a4a"/><path d="M16 25.6l-4.2-9.6h8.4z" fill="#3a4a7a"/><circle cx="16" cy="16" r="1.8" fill="#ffd23f"/></svg>',
-      l: chev(0), r: chev(180), u: chev(90), d: chev(270)
-    };
-    var MAP = [['gear', 'gear'], ['invBtn', 'bag'], ['apBtn', 'comp'], ['bL', 'l'], ['bR', 'r'], ['bJ', 'u'], ['bDn', 'd']];
-    function gxUiIcons(on) {
-      MAP.forEach(function (p) { var el = document.getElementById(p[0]); if (!el) return; if (el.__gxo === undefined) el.__gxo = el.innerHTML; el.innerHTML = on ? SV[p[1]] : el.__gxo; });
-    }
-    var _gxSetUi = gxSet; gxSet = function (on) { _gxSetUi(on); try { gxUiIcons(!!on); } catch (e) {} };
-  })();
+// Иконки рюкзака и шестерёнки заданы SVG в index.html и не подменяются.
 
 var FXRGB = {};
 
