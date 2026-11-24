@@ -6,7 +6,7 @@ const PRESETS = {
 };
 const LABELS = { lite: 'экономия', hd: 'качество', ultra: 'максимум' };
 
-export function createSettings(api) {
+function createSettings(api) {
   const { music } = api;
   const el = (id) => document.getElementById(id);
   const switches = {

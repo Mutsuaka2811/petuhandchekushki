@@ -1,6 +1,6 @@
 // Пост-обработка кадра: мягкий свет, виньетка, зерно и лёгкие пылинки.
 // Ядро передаёт «живое» окружение геттерами, чтобы модуль видел текущие W/H/t.
-export function createPostFx(env) {
+function createPostFx(env) {
   let grainTileCache = null;
 
   function grainTile() {

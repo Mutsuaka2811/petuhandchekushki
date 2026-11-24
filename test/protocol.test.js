@@ -93,7 +93,9 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal((html.match(/<html lang="ru">/g) || []).length, 1);
   assert.equal((html.match(/data:[a-z]+\/[\w+-]+;base64,/g) || []).length, 0, 'медиа должно быть вынесено из HTML');
   assert.match(html, /href="\/css\/game\.css"/);
-  assert.match(html, /src="\/js\/game\.mjs"/);
+  assert.match(html, /src="\/js\/parts\/00-globals\.js"/);
+  assert.match(html, /src="\/js\/lib\/assets\.js"/);
+  assert.match(html, /src="\/js\/parts\/12-init\.js"/);
   assert.doesNotMatch(html, /freezeNote|Важное объявление автора/);
   assert.equal((html.match(/data-tab="/g) || []).length, 5, 'должны быть 5 вкладок настроек');
   assert.equal((html.match(/data-preset="/g) || []).length, 3, 'должны быть 3 пресета графики');
@@ -105,10 +107,14 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal(clientJs.status, 200);
   assert.match(await clientJs.text(), /socket\.io/);
 
-  const gameJs = await fetch(`${BASE}/js/game.mjs`);
+  const gameJs = await fetch(`${BASE}/js/parts/01-defs.js`);
   assert.equal(gameJs.status, 200);
   assert.match(gameJs.headers.get('content-type'), /javascript/);
   assert.doesNotMatch(await gameJs.text(), /data:image\/webp;base64,/);
+
+  const assets = await fetch(`${BASE}/js/lib/assets.js`);
+  assert.equal(assets.status, 200);
+  assert.match(await assets.text(), /track-1\.m4a/);
 
   const css = await fetch(`${BASE}/css/game.css`);
   assert.equal(css.status, 200);
@@ -193,6 +199,47 @@ test('ники уникальны, сервер выдаёт замену', asyn
   const info = await dupRoom;
   const names = info.members.map((m) => m.n);
   assert.equal(new Set(names).size, names.length, 'ники не должны повторяться');
+});
+
+test('пинг лобби приходит только запросившему', async () => {
+  const a = await newClient('u-ping-a', 'ПингA');
+  const b = await newClient('u-ping-b', 'ПингB');
+  await wait(200);
+  let gotOnB = 0;
+  const listener = () => gotOnB++;
+  b.on('lobbies', listener);
+  const answer = once(a, 'lobbies');
+  a.emit('lobbies');
+  const list = await answer;
+  await wait(250);
+  b.off('lobbies', listener);
+  assert.ok(Array.isArray(list), 'A должен получить список');
+  assert.equal(gotOnB, 0, 'B не должен получать ответ на пинг A');
+});
+
+test('урон боссу и платные события не принимаются от читера', async () => {
+  const a = await newClient('u-cheat-a', 'Хост');
+  const b = await newClient('u-cheat-b', 'Читер');
+  const created = once(a, 'room');
+  a.emit('create', { max: 4 });
+  const room = await created;
+  const bRoom = once(b, 'room');
+  b.emit('enter', { c: room.code });
+  await bRoom;
+
+  const started = once(b, 'boss');
+  a.emit('boss', { start: 1, l: 3, np: 2 });
+  await started;
+
+  const dmg = waitFor(a, 'boss', (m) => m && m.dmg !== undefined);
+  b.emit('boss', { dmg: 100000 });
+  assert.equal((await dmg).dmg, 150, 'урон за один пакет ограничен');
+
+  let market = 0;
+  a.on('mkt', () => market++);
+  b.emit('mkt', { id: 'hack' });
+  await wait(150);
+  assert.equal(market, 0, 'неизвестное платное событие не рассылается');
 });
 
 test('общий босс: хост получает урон, последователь — deny и завершение', async () => {

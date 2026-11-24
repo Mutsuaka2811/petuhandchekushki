@@ -4,6 +4,8 @@ const config = require('./config');
 const U = require('./util');
 
 const roomKey = (code) => 'room:' + code;
+const PAID_EVENTS = new Set(['ad', 'sale', 'fest', 'tv']); // id из PAID_EV клиента
+const MAX_STATE_SPEED = 1400; // пикселей в секунду — защита от телепортов
 
 /**
  * Игровой сервер: лобби, чат, синхронизация игроков и все совместные режимы.
@@ -48,10 +50,14 @@ class GameServer {
     };
     this.players.set(socket.id, p);
 
-    if (this.connections >= config.maxConnections) socket.emit('full');
+    if (this.connections >= config.maxConnections) {
+      socket.emit('full');
+      // Не держим лишнее соединение: клиент увидит «сервер полон» и отвалится.
+      setTimeout(() => socket.disconnect(true), 1500);
+    }
 
     socket.on('join', (m) => this.onJoin(socket, p, m));
-    socket.on('lobbies', () => this.sendLobbies());
+    socket.on('lobbies', () => this.sendLobbies(socket));
     socket.on('create', (m) => this.onCreate(socket, p, m));
     socket.on('enter', (m) => this.onEnter(socket, p, m));
     socket.on('leave', () => this.leaveRoom(socket, p));
@@ -118,7 +124,9 @@ class GameServer {
     for (const id of room.memberIds) this.io.to(id).emit('room', info);
   }
 
-  sendLobbies() {
+  // Без target — рассылка при изменении списка комнат. С target — ответ только
+  // запросившему: клиент шлёт 'lobbies' каждые 3 секунды просто как пинг.
+  sendLobbies(target) {
     const list = [];
     for (const room of this.rooms.values()) {
       const host = this.players.get(room.host);
@@ -130,7 +138,8 @@ class GameServer {
         max: room.max,
       });
     }
-    this.io.emit('lobbies', list);
+    if (target) target.emit('lobbies', list);
+    else this.io.emit('lobbies', list);
   }
 
   // Отправить в комнату, кроме одного игрока (например, хоста босса —
@@ -223,6 +232,9 @@ class GameServer {
   addToRoom(socket, p, room) {
     room.memberIds.add(p.id);
     p.room = room.code;
+    p.lastState = null;
+    p.rbBits = new Set();
+    p.rbGo = false;
     socket.join(roomKey(room.code));
     this.rememberRoom(p, room.code);
     this.stateOf(room.code);
@@ -296,7 +308,18 @@ class GameServer {
   onState(p, m) {
     const room = this.roomOf(p);
     if (!room || !this.rate(p, 'state', 40, 1000)) return;
-    p.state = U.sanitizeState(m);
+    const s = U.sanitizeState(m);
+    if (!s) return;
+    const now = Date.now();
+    if (p.lastState && p.lastState.l === s.l && s.l >= 0) {
+      const dt = (now - p.lastState.t) / 1000;
+      if (dt > 0 && dt < 0.5) {
+        const maxDelta = MAX_STATE_SPEED * dt + 40;
+        if (Math.abs(s.x - p.lastState.x) > maxDelta) s.x = p.lastState.x; // телепорт
+      }
+    }
+    p.lastState = { x: s.x, l: s.l, t: now };
+    p.state = s;
   }
 
   onChat(socket, p, m) {
@@ -335,8 +358,10 @@ class GameServer {
       if (!st.boss || st.boss.owner !== p.id || !this.rate(p, 'boss-sn', 20, 1000)) return;
       this.emitRoom(room, 'boss', { sn: U.sanitizePayload(m.sn, 2048) }, p.id);
     } else if (m.dmg !== undefined) {
-      if (!st.boss) return;
-      const dmg = U.num(m.dmg, 0, 100000);
+      if (!st.boss || !this.rate(p, 'boss-dmg', 10, 1000)) return;
+      // Клиент шлёт накопленный урон раз в 0.15 с. Один выстрел не может
+      // снять больше 150 HP, иначе босс умирает с одного читерского пакета.
+      const dmg = U.num(m.dmg, 0, 150);
       if (dmg > 0) this.io.to(st.boss.owner).emit('boss', { dmg: Math.round(dmg) });
     } else if (m.atk) {
       if (!st.boss || st.boss.owner !== p.id) return;
@@ -385,8 +410,8 @@ class GameServer {
       if (!st.kr || st.kr.owner !== p.id || !this.rate(p, 'kr-sn', 10, 1000)) return;
       this.emitRoom(room, 'kr', { sn: U.sanitizePayload(m.sn, 4096) }, p.id);
     } else if (m.dmg !== undefined) {
-      if (!st.kr) return;
-      const dmg = U.num(m.dmg, 0, 100000);
+      if (!st.kr || !this.rate(p, 'kr-dmg', 10, 1000)) return;
+      const dmg = U.num(m.dmg, 0, 80);
       if (dmg > 0) this.io.to(st.kr.owner).emit('kr', { dmg: Math.round(dmg * 10) / 10 });
     } else if (m.end) {
       if (st.kr && st.kr.owner === p.id) {
@@ -517,9 +542,13 @@ class GameServer {
 
   onRevive(p, m) {
     const room = this.roomOf(p);
-    if (!room || !U.isObj(m)) return;
+    if (!room || !U.isObj(m) || !this.rate(p, 'rv', 3, 5000)) return;
     const to = U.str(m.to, 40);
     if (!room.memberIds.has(to)) return;
+    // Поднимать можно только того, кто рядом в той же локации.
+    const target = this.players.get(to);
+    if (!target || !p.state || !target.state) return;
+    if (p.state.l !== target.state.l || Math.abs(p.state.x - target.state.x) > 700) return;
     this.io.to(to).emit('rv', {
       n: p.n,
       f: U.bool(m.f),
@@ -531,19 +560,25 @@ class GameServer {
   onRiot(p, m) {
     const room = this.roomOf(p);
     if (!room || !U.isObj(m) || !this.rate(p, 'rb', 10, 10000)) return;
+    if (!p.rbBits) p.rbBits = new Set();
     if (m.go !== undefined) {
+      if (p.rbGo) return;
+      p.rbGo = true;
       this.emitRoom(room, 'rb', { go: U.int(m.go, 0, 8191) & 8191, n: p.n }, p.id);
     } else if (m.b !== undefined) {
       const bit = U.int(m.b, 0, 12, -1);
-      if (bit >= 0 && bit <= 12) this.emitRoom(room, 'rb', { b: bit, n: p.n }, p.id);
+      if (bit < 0 || bit > 12 || p.rbBits.has(bit)) return;
+      p.rbBits.add(bit);
+      this.emitRoom(room, 'rb', { b: bit, n: p.n }, p.id);
     }
   }
 
   onMarket(p, m) {
     const room = this.roomOf(p);
-    if (!room || !U.isObj(m) || !this.rate(p, 'mkt', 5, 10000)) return;
+    // Только известные платные события и не чаще одного в минуту.
+    if (!room || !U.isObj(m) || !this.rate(p, 'mkt', 1, 60000)) return;
     const id = U.str(m.id, 40);
-    if (id) this.emitRoom(room, 'mkt', { id }, p.id);
+    if (PAID_EVENTS.has(id)) this.emitRoom(room, 'mkt', { id }, p.id);
   }
 
   // ---------- тик ----------
