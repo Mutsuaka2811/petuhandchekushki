@@ -94,6 +94,12 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal((html.match(/data:[a-z]+\/[\w+-]+;base64,/g) || []).length, 0, 'медиа должно быть вынесено из HTML');
   assert.match(html, /href="\/css\/game\.css"/);
   assert.match(html, /src="\/js\/game\.js"/);
+  assert.doesNotMatch(html, /freezeNote|Важное объявление автора/);
+  assert.equal((html.match(/data-tab="/g) || []).length, 5, 'должны быть 5 вкладок настроек');
+  assert.equal((html.match(/data-preset="/g) || []).length, 3, 'должны быть 3 пресета графики');
+  for (const id of ['vignetteSwitch', 'bloomSwitch', 'grainSwitch', 'particlesSwitch', 'shakeSwitch', 'uiAnimSwitch']) {
+    assert.ok(html.includes('id="' + id + '"'), 'должен быть переключатель ' + id);
+  }
 
   const clientJs = await fetch(`${BASE}/socket.io/socket.io.js`);
   assert.equal(clientJs.status, 200);

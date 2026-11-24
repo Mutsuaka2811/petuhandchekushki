@@ -398,7 +398,8 @@
 
   // ---------- звук ----------
   var MKEY = 'chekushka-music-v1';
-  var music = { apf: [1, 1, 1, 1, 1, 1, 1], on: true, vol: 0.5, track: 0, sfx: true, auto: false, mat: true, fps: false, ping: false, hq: false, bm: true };
+  var music = { apf: [1, 1, 1, 1, 1, 1, 1], on: true, vol: 0.5, track: 0, sfx: true, auto: false, mat: true, fps: false, ping: false, hq: false, bm: true,
+    preset: 'hd', vignette: true, bloom: true, grain: false, particles: true, shake: true, uiAnim: true };
   try {
     var mr = localStorage.getItem(MKEY);
     if (mr) {
@@ -412,6 +413,13 @@
       if (typeof ms.ping === 'boolean') music.ping = ms.ping;
       if (typeof ms.hq === 'boolean') music.hq = ms.hq;
       if (typeof ms.bm === 'boolean') music.bm = ms.bm;
+      if (ms.preset === 'lite' || ms.preset === 'hd' || ms.preset === 'ultra') music.preset = ms.preset;
+      if (typeof ms.vignette === 'boolean') music.vignette = ms.vignette;
+      if (typeof ms.bloom === 'boolean') music.bloom = ms.bloom;
+      if (typeof ms.grain === 'boolean') music.grain = ms.grain;
+      if (typeof ms.particles === 'boolean') music.particles = ms.particles;
+      if (typeof ms.shake === 'boolean') music.shake = ms.shake;
+      if (typeof ms.uiAnim === 'boolean') music.uiAnim = ms.uiAnim;
       if (typeof ms.vol === 'number') music.vol = Math.min(1, Math.max(0, ms.vol));
       if (typeof ms.track === 'number' && ms.track >= 0 && ms.track < TRACKS.length) music.track = ms.track;
     }
@@ -5869,7 +5877,7 @@
     g.globalAlpha = 1; g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return (pfGl[c] = cv);
   }
   function pfDraw(x, y, r, c, a) { ctx.globalAlpha = Math.max(0, Math.min(1, a)); ctx.drawImage(pfGlow(c), x - r, y - r, r * 2, r * 2); }
-  function pfAdd(o) { o.a = 0; pfa.push(o); if (pfa.length > 460) pfa.splice(0, pfa.length - 460); }
+  function pfAdd(o) { if (music.particles === false && Math.random() < 0.5) return; o.a = 0; pfa.push(o); if (pfa.length > 460) pfa.splice(0, pfa.length - 460); }
   function pfSpark(x, y, n, c, sp, life, w) { for (var i = 0; i < n; i++) { var an = Math.random() * 6.283, v = (0.35 + Math.random() * 0.65) * sp; pfAdd({ k: 's', x: x, y: y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - sp * 0.12, g: 700, l: life * (0.6 + Math.random() * 0.6), c: c, s: w || 2.5 }); } }
   function pfSparkDir(x, y, n, c, dirx, sp, life) { for (var i = 0; i < n; i++) { var an = (dirx >= 0 ? 0 : 3.14159) + (Math.random() - 0.5) * 1.1, v = (0.4 + Math.random() * 0.6) * sp; pfAdd({ k: 's', x: x, y: y, vx: Math.cos(an) * v, vy: Math.sin(an) * v, g: 500, l: life, c: c, s: 2.2 }); } }
   function pfGlowP(x, y, vx, vy, s, c, life, g) { pfAdd({ k: 'g', x: x, y: y, vx: vx, vy: vy, g: g || 0, l: life, c: c, s: s }); }
@@ -11505,10 +11513,61 @@
     ctx.fillStyle = '#fff'; ctx.fillText(msg, cx, y);
   }
 
+  // ---------- пост-обработка картинки: мягкий свет, виньетка, зерно ----------
+  var gxGrainTile = null;
+  function grainTile() {
+    if (gxGrainTile) return gxGrainTile;
+    var cv = document.createElement('canvas'); cv.width = cv.height = 96;
+    var c = cv.getContext('2d'), im = c.createImageData(96, 96), d = im.data;
+    for (var i = 0; i < d.length; i += 4) {
+      var v = 110 + Math.random() * 90;
+      d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+    }
+    c.putImageData(im, 0, 0); gxGrainTile = cv; return cv;
+  }
+  function drawPostFx() {
+    try {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.save();
+      if (music.bloom) {
+        ctx.globalCompositeOperation = 'screen';
+        var bg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.12, W / 2, H * 0.42, H * 0.85);
+        bg.addColorStop(0, 'rgba(255,226,160,0.06)'); bg.addColorStop(1, 'rgba(255,226,160,0)');
+        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      // Медленно летящие пылинки/блики — оживляют картинку без нагрузки на движок.
+      if (GX && music.particles !== false) {
+        ctx.globalCompositeOperation = 'screen';
+        for (var d = 0; d < 26; d++) {
+          var dx = ((d * 173.7 + t * (7 + (d % 5) * 3)) % (W + 80)) - 40;
+          var dy = ((d * 97.3 - t * (3 + (d % 3) * 2)) % (H + 80) + H + 80) % (H + 80) - 40;
+          ctx.globalAlpha = 0.05 + 0.04 * Math.sin(t * 1.3 + d);
+          ctx.fillStyle = d % 4 === 0 ? '#ffe6a8' : '#cfe6ff';
+          ctx.beginPath(); ctx.arc(dx, dy, 0.7 + (d % 3) * 0.5, 0, 6.3); ctx.fill();
+        }
+        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      }
+      if (music.vignette) {
+        var vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.82);
+        vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(5,9,22,0.4)');
+        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+      }
+      if (music.grain) {
+        ctx.globalAlpha = 0.035;
+        var ox = (Math.random() * 96) | 0, oy = (Math.random() * 96) | 0;
+        for (var x = -ox; x < W; x += 96) for (var y = -oy; y < H; y += 96) ctx.drawImage(grainTile(), x, y);
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    } catch (e) {}
+  }
+
   function render() {
     if (hn.on) { drawHn(); return; }
     if (flt.on) { drawFlight(); return; }
-    shakeX = shk > 0 ? (Math.random() - 0.5) * shk * 22 : 0; shakeY = shk > 0 ? (Math.random() - 0.5) * shk * 14 : 0;
+    if (music.shake !== false) { shakeX = shk > 0 ? (Math.random() - 0.5) * shk * 22 : 0; shakeY = shk > 0 ? (Math.random() - 0.5) * shk * 14 : 0; }
+    else { shakeX = shakeY = 0; }
     drawSky();
     drawClouds();
     drawHero();
@@ -11570,6 +11629,7 @@
     drawPopups();
     drawAtm();
     drawNightOverlay();
+    drawPostFx();
     drawShopHint();
     drawSpotHint();
     drawStormFx();
@@ -12254,6 +12314,10 @@
   var swAuto = document.getElementById('autoSwitch');
   var swMat = document.getElementById('matSwitch');
   var swFps = document.getElementById('fpsSwitch'), swPing = document.getElementById('pingSwitch'); var swHq = document.getElementById('hqSwitch'); var swBm = document.getElementById('bmSwitch');
+  var swVig = document.getElementById('vignetteSwitch'), swBloom = document.getElementById('bloomSwitch');
+  var swGrain = document.getElementById('grainSwitch'), swParts = document.getElementById('particlesSwitch');
+  var swShake = document.getElementById('shakeSwitch'), swAnim = document.getElementById('uiAnimSwitch');
+  var presetBtns = Array.prototype.slice.call(document.querySelectorAll('[data-preset]'));
   var elPerf = document.getElementById('perfChip'), elPerfNow = document.getElementById('perfNow'), lastPerfUi = '', lastPerfNow = '';
   function pingText() {
     if (typeof socket === 'undefined' || !socket) return 'нет сервера';
@@ -12295,6 +12359,14 @@
     swFps.setAttribute('aria-checked', music.fps ? 'true' : 'false');
     swHq.setAttribute('aria-checked', music.hq ? 'true' : 'false'); swBm.setAttribute('aria-checked', music.bm ? 'true' : 'false');
     swPing.setAttribute('aria-checked', music.ping ? 'true' : 'false');
+    swVig.setAttribute('aria-checked', music.vignette ? 'true' : 'false');
+    swBloom.setAttribute('aria-checked', music.bloom ? 'true' : 'false');
+    swGrain.setAttribute('aria-checked', music.grain ? 'true' : 'false');
+    swParts.setAttribute('aria-checked', music.particles ? 'true' : 'false');
+    swShake.setAttribute('aria-checked', music.shake ? 'true' : 'false');
+    swAnim.setAttribute('aria-checked', music.uiAnim ? 'true' : 'false');
+    document.body.classList.toggle('no-uianim', !music.uiAnim);
+    presetBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-preset') === music.preset ? 'true' : 'false'); });
     vol.value = Math.round(music.vol * 100);
     trackBtns.forEach(function (b, i) { b.setAttribute('aria-checked', i === music.track ? 'true' : 'false'); });
   }
@@ -12311,6 +12383,51 @@
   swPing.addEventListener('click', function () { music.ping = !music.ping; saveMusic(); sync(); sfx('pick'); if (music.ping) pingSend(); perfUi(); });
   swSfx.addEventListener('click', function () { music.sfx = !music.sfx; saveMusic(); sync(); if (music.sfx) sfx('pick'); });
   vol.addEventListener('input', function () { music.vol = vol.value / 100; audio.volume = music.vol; saveMusic(); });
+
+  // Графические пресеты: один клик меняет и HD-режим, и эффекты, и чёткость.
+  function applyPreset(name) {
+    var ps = {
+      lite:  { gx: false, hq: false, vignette: false, bloom: false, grain: false, particles: false, shake: false, uiAnim: false, q: 0.7 },
+      hd:    { gx: true,  hq: false, vignette: true,  bloom: true,  grain: false, particles: true,  shake: true,  uiAnim: true,  q: 1 },
+      ultra: { gx: true,  hq: true,  vignette: true,  bloom: true,  grain: true,  particles: true,  shake: true,  uiAnim: true,  q: 1 }
+    };
+    var p = ps[name]; if (!p) return;
+    music.preset = name;
+    music.hq = p.hq; music.vignette = p.vignette; music.bloom = p.bloom; music.grain = p.grain;
+    music.particles = p.particles; music.shake = p.shake; music.uiAnim = p.uiAnim;
+    try { localStorage.setItem(GXMODE, p.gx ? 'hd' : 'lite'); localStorage.setItem('chk_gfx2_hd_default', '1'); } catch (e) {}
+    try { gxSet(p.gx); gxSwUi(); } catch (e) {}
+    if (PERF.q !== p.q) {
+      PERF.q = p.q;
+      try { localStorage.setItem('chekushka-perf-q', String(p.q)); } catch (e) {}
+      resize();
+    }
+    saveMusic(); sync(); sfx('pick');
+    try { toast('Графика: ' + ({ lite: 'экономия', hd: 'качество', ultra: 'максимум' })[name], 2200); } catch (e) {}
+  }
+  presetBtns.forEach(function (b) { b.addEventListener('click', function () { applyPreset(b.getAttribute('data-preset')); }); });
+  function bindFxSwitch(el, key) { el.addEventListener('click', function () { music[key] = !music[key]; saveMusic(); sync(); sfx('pick'); }); }
+  bindFxSwitch(swVig, 'vignette'); bindFxSwitch(swBloom, 'bloom'); bindFxSwitch(swGrain, 'grain');
+  bindFxSwitch(swParts, 'particles'); bindFxSwitch(swShake, 'shake'); bindFxSwitch(swAnim, 'uiAnim');
+
+  // Вкладки настроек
+  (function initSettingsTabs() {
+    var nav = document.getElementById('setTabs');
+    if (!nav) return;
+    var tabs = Array.prototype.slice.call(nav.querySelectorAll('[data-tab]'));
+    var panes = Array.prototype.slice.call(document.querySelectorAll('.stabpane'));
+    function select(name) {
+      tabs.forEach(function (b) {
+        var on = b.getAttribute('data-tab') === name;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panes.forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== name; });
+      var sheet = document.querySelector('#overlay .sheet'); if (sheet) sheet.scrollTop = 0;
+    }
+    tabs.forEach(function (b) { b.addEventListener('click', function () { select(b.getAttribute('data-tab')); }); });
+  })();
+  sync();
 
   var settingsOpen = false, upOpen = false, logOpen = false, washOpen = false, busOpen = false, invOpen = false;
   function syncPause() { paused = settingsOpen || upOpen || logOpen || washOpen || busOpen || invOpen || menuOpen || lobbyOpen || phoneOpen || miniOpen || tripMenuOpen || sqOpen || fshopOpen || whOpen || dlgOpened || finOn || !!(fsh && fsh.open); if (paused) { input.left = input.right = false; thr.key = thr.ptr = thr.btn = false; } }
@@ -21992,6 +22109,13 @@
 
   // ================= катсцена «Разлом» (один раз), переключатель HD / лёгкий режим, страж производительности =================
   var GXKEY = 'chk_gfx2', GXMODE = 'chk_gfx2_mode', gxCs = { on: false }, gxFN = 0;
+  // HD — режим по умолчанию. Старые сохранения с «lite» переводим один раз.
+  try {
+    if (localStorage.getItem(GXMODE) === 'lite' && !localStorage.getItem('chk_gfx2_hd_default')) {
+      localStorage.setItem(GXMODE, 'hd');
+      localStorage.setItem('chk_gfx2_hd_default', '1');
+    }
+  } catch (e) {}
   function gxSeen() { var s = 0; try { s = localStorage.getItem(GXKEY) ? 1 : 0; } catch (e) {} return s || ((save && save.mx && save.mx.gfx) ? 1 : 0); }
   function gxMarkSeen() { try { localStorage.setItem(GXKEY, '1'); } catch (e) {} try { save.mx.gfx = 1; persist(); } catch (e) {} }
   function gxPref() { try { return localStorage.getItem(GXMODE) !== 'lite'; } catch (e) { return true; } }
@@ -24038,25 +24162,13 @@
   })();
   document.addEventListener('visibilitychange', function () { if (document.hidden && cloud.timer) cloudPush(); });
   window.addEventListener('pagehide', function () { if (cloud.timer) cloudPush(); });
-  // 2.61.0: reveal dismissal and one-time author announcement.
-  (function init261Overlays() {
+  // Chicken Token: закрытие кинематографичного показа трофея.
+  (function initTokenCinema() {
     var cinema = document.getElementById('tokenCinema');
     var collect = document.getElementById('tokenCollect');
     function closeCinema() { cinema.hidden = true; }
     collect.addEventListener('click', closeCinema);
     cinema.addEventListener('click', function (e) { if (e.target === cinema) closeCinema(); });
-    var note = document.getElementById('freezeNote');
-    var close = document.getElementById('freezeClose');
-    var key = 'chekushka-freeze-note-261-seen';
-    function closeNote() { note.hidden = true; }
-    close.addEventListener('click', closeNote);
-    try {
-      if (!localStorage.getItem(key)) {
-        note.hidden = false;
-        localStorage.setItem(key, '1');
-        close.focus();
-      }
-    } catch (e) { /* Если хранилище отключено, объявление всё равно показывается при запуске. */ note.hidden = false; }
   })();
   sync();
   // ---------- запуск ----------

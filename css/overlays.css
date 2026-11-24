@@ -1,12 +1,8 @@
 :root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
-/* 2.61.0: one-time project notice and cinematic Chicken Token reveal */
-.freeze-note, .token-cinema { position:fixed; inset:0; z-index:10050; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.86); backdrop-filter:blur(7px); }
-.freeze-note[hidden], .token-cinema[hidden] { display:none !important; }
-.freeze-card { width:min(720px,100%); max-height:min(86vh,900px); overflow:auto; padding:24px; border:1px solid rgba(255,210,90,.55); border-radius:22px; background:linear-gradient(145deg,#20202a,#101018 70%); color:#fff; box-shadow:0 0 55px rgba(255,184,45,.2); }
-.freeze-card h2 { margin:0 0 14px; color:#ffd76a; font-size:clamp(22px,5vw,32px); }
-.freeze-card p { margin:10px 0; line-height:1.5; white-space:pre-line; }
-.freeze-card .freeze-close { display:block; width:100%; margin-top:20px; padding:13px; border:0; border-radius:12px; background:#e7ad35; color:#241700; font-weight:900; font-size:16px; }
-.token-cinema { overflow:hidden; background:radial-gradient(circle at 50% 46%,rgba(255,190,50,.2),rgba(0,0,0,.96) 65%); }
+/* Cinematic Chicken Token reveal */
+.token-cinema { position:fixed; inset:0; z-index:10050; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.86); backdrop-filter:blur(7px); overflow:hidden; }
+.token-cinema[hidden] { display:none !important; }
+.token-cinema { background:radial-gradient(circle at 50% 46%,rgba(255,190,50,.2),rgba(0,0,0,.96) 65%); }
 .token-stage { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; width:min(520px,100%); min-height:430px; text-align:center; color:#fff; }
 .token-rays { position:absolute; width:min(86vw,440px); aspect-ratio:1; border-radius:50%; background:repeating-conic-gradient(from 0deg,rgba(255,218,106,.0) 0deg 8deg,rgba(255,218,106,.26) 9deg 11deg,rgba(255,218,106,0) 12deg 20deg); animation:token-rays 18s linear infinite; }
 .token-glow { position:absolute; width:210px; height:210px; border-radius:50%; background:#ffc94d; filter:blur(65px); opacity:.55; animation:token-pulse 1.5s ease-in-out infinite alternate; }
