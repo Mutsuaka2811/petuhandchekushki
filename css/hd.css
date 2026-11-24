@@ -1,0 +1,113 @@
+/* Тема интерфейса для HD-графики. В лёгком режиме эти стили не применяются. */
+body.gx {
+  --hd-gold: #ffd45e;
+  --hd-ink: #f2f6ff;
+}
+
+body.gx .sheet {
+  background: linear-gradient(165deg, #243854 0%, #151d31 60%, #11182a 100%);
+  color: var(--hd-ink);
+  border: 2px solid rgba(255, 214, 110, .35);
+  border-bottom: none;
+  box-shadow: 0 -16px 60px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .12);
+  backdrop-filter: blur(14px);
+}
+
+body.gx .sheet h2,
+body.gx .overlay.menu h2 {
+  background: linear-gradient(92deg, #ffe9a8, #ffc23c 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 2px 18px rgba(255, 190, 50, .25);
+}
+
+body.gx .sub,
+body.gx .vline,
+body.gx .logdate,
+body.gx .upCoins .cn,
+body.gx .track .td {
+  color: #a8bad5;
+}
+
+body.gx .mbtn,
+body.gx .close {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255, 255, 255, .35);
+}
+
+body.gx .mbtn { background: linear-gradient(180deg, #ff6b62, #d93038); }
+body.gx .mbtn.alt { background: linear-gradient(180deg, #5f9df5, #3562cf); }
+body.gx .close { background: linear-gradient(180deg, #ffbe45, #e07b16); color: #2b1900; }
+
+body.gx .mbtn::after,
+body.gx .close::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, .28) 48%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+
+body.gx .mbtn:hover::after,
+body.gx .close:hover::after { transform: translateX(120%); transition: transform .7s ease; }
+body.gx .mbtn:hover,
+body.gx .close:hover,
+body.gx .logbtn:hover,
+body.gx .track:hover { filter: brightness(1.08); transform: translateY(-1px); }
+body.gx .mbtn, body.gx .close, body.gx .logbtn, body.gx .track { transition: filter .15s, transform .15s; }
+
+body.gx .stab,
+body.gx .pbtn,
+body.gx .logbtn,
+body.gx .track,
+body.gx .achbox {
+  border-color: rgba(160, 190, 230, .28);
+  background: rgba(150, 180, 225, .10);
+  color: var(--hd-ink);
+}
+
+body.gx .stab.on,
+body.gx .pbtn[aria-pressed="true"] {
+  background: linear-gradient(180deg, #ffd66a, #e59a1c);
+  border-color: #ffe4a1;
+  color: #2b1900;
+  box-shadow: 0 4px 14px rgba(240, 165, 40, .35);
+}
+
+body.gx .switch[aria-checked="true"] {
+  background: linear-gradient(180deg, #5fd0ff, #2a7fe0);
+  border-color: #8adcff;
+  box-shadow: 0 0 14px rgba(70, 170, 255, .45);
+}
+
+body.gx .row .lbl { color: #eef4ff; }
+
+body.gx .chip,
+body.gx .perfchip,
+body.gx .lrow,
+body.gx .mem {
+  background: rgba(18, 28, 48, .72);
+  border: 1px solid rgba(160, 195, 240, .28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 4px 16px rgba(0, 0, 0, .28);
+  backdrop-filter: blur(8px);
+}
+
+body.gx .chip b,
+body.gx .chip span { text-shadow: 0 1px 4px rgba(0, 0, 0, .5); }
+
+body.gx .gear,
+body.gx .close,
+body.gx .lbtn {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35);
+}
+
+body.gx .achbox summary { color: #ffe08a; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.gx .mbtn::after, body.gx .close::after { display: none; }
+  body.gx .mbtn, body.gx .close, body.gx .logbtn, body.gx .track { transition: none; }
+}

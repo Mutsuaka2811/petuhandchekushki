@@ -1,3 +1,6 @@
+import { TRACKS, SMP_SRC } from './core/assets.mjs';
+import { createPostFx } from './core/postfx.mjs';
+import { createSettings } from './core/settings.mjs';
 
 (function () {
   'use strict';
@@ -398,7 +401,7 @@
 
   // ---------- звук ----------
   var MKEY = 'chekushka-music-v1';
-  var music = { apf: [1, 1, 1, 1, 1, 1, 1], on: true, vol: 0.5, track: 0, sfx: true, auto: false, mat: true, fps: false, ping: false, hq: false, bm: true,
+  var music = { apf: [1, 1, 1, 1, 1, 1, 1], on: true, vol: 0.5, track: 0, sfx: true, auto: true, mat: true, fps: false, ping: false, hq: false, bm: true,
     preset: 'hd', vignette: true, bloom: true, grain: false, particles: true, shake: true, uiAnim: true };
   try {
     var mr = localStorage.getItem(MKEY);
@@ -424,15 +427,17 @@
       if (typeof ms.track === 'number' && ms.track >= 0 && ms.track < TRACKS.length) music.track = ms.track;
     }
   } catch (e) {}
+  // Один раз включаем автоподбор для старых сохранений: раньше он был выключен
+  // по умолчанию, поэтому чекушки приходилось подбирать вручную кнопкой E.
+  try {
+    if (!localStorage.getItem('chk_auto_default_v2')) {
+      music.auto = true;
+      localStorage.setItem('chk_auto_default_v2', '1');
+      saveMusic();
+    }
+  } catch (e) {}
   function saveMusic() { try { localStorage.setItem(MKEY, JSON.stringify(music)); } catch (e) {} }
 
-  var TRACKS = [
-    { name: 'Трек 1', dur: '0:17', src: '/assets/audio/track-1.m4a' },
-    { name: 'Трек 3', dur: '0:56', src: '/assets/audio/track-3.m4a' },
-    { name: 'Трек 4', dur: '0:27', src: '/assets/audio/track-4.m4a' },
-    { name: 'Трек 5', dur: '0:23', src: '/assets/audio/track-5.m4a' },
-    { name: 'Трек 6', dur: '0:27', src: '/assets/audio/track-6.m4a' }
-  ];
   var audio = new Audio();
   audio.loop = true; audio.preload = 'auto'; audio.volume = music.vol;
   var retried = false, started = false;
@@ -2732,14 +2737,6 @@
   }
 
   // ---------- звуки кракена и сонар ----------
-  var SMP_SRC = {
-    bCall: '/assets/audio/bCall.m4a', bSplash: '/assets/audio/bSplash.m4a',
-    bAmb: '/assets/audio/bAmb.m4a', bRoar: '/assets/audio/bRoar.m4a',
-    bMove: '/assets/audio/bMove.m4a',
-    sSonar: '/assets/audio/sSonar.m4a', sGroan: '/assets/audio/sGroan.m4a',
-    sStrike: '/assets/audio/sStrike.m4a', sDive: '/assets/audio/sDive.m4a',
-    sRoar: '/assets/audio/sRoar.m4a'
-  };
   var smpEl = {}, smpPlaying = {};
   function playSmp(id, gain) {
     if (!music.sfx || document.hidden || !SMP_SRC[id]) return;
@@ -11513,55 +11510,12 @@
     ctx.fillStyle = '#fff'; ctx.fillText(msg, cx, y);
   }
 
-  // ---------- пост-обработка картинки: мягкий свет, виньетка, зерно ----------
-  var gxGrainTile = null;
-  function grainTile() {
-    if (gxGrainTile) return gxGrainTile;
-    var cv = document.createElement('canvas'); cv.width = cv.height = 96;
-    var c = cv.getContext('2d'), im = c.createImageData(96, 96), d = im.data;
-    for (var i = 0; i < d.length; i += 4) {
-      var v = 110 + Math.random() * 90;
-      d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
-    }
-    c.putImageData(im, 0, 0); gxGrainTile = cv; return cv;
-  }
-  function drawPostFx() {
-    try {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.save();
-      if (music.bloom) {
-        ctx.globalCompositeOperation = 'screen';
-        var bg = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.12, W / 2, H * 0.42, H * 0.85);
-        bg.addColorStop(0, 'rgba(255,226,160,0.06)'); bg.addColorStop(1, 'rgba(255,226,160,0)');
-        ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-        ctx.globalCompositeOperation = 'source-over';
-      }
-      // Медленно летящие пылинки/блики — оживляют картинку без нагрузки на движок.
-      if (GX && music.particles !== false) {
-        ctx.globalCompositeOperation = 'screen';
-        for (var d = 0; d < 26; d++) {
-          var dx = ((d * 173.7 + t * (7 + (d % 5) * 3)) % (W + 80)) - 40;
-          var dy = ((d * 97.3 - t * (3 + (d % 3) * 2)) % (H + 80) + H + 80) % (H + 80) - 40;
-          ctx.globalAlpha = 0.05 + 0.04 * Math.sin(t * 1.3 + d);
-          ctx.fillStyle = d % 4 === 0 ? '#ffe6a8' : '#cfe6ff';
-          ctx.beginPath(); ctx.arc(dx, dy, 0.7 + (d % 3) * 0.5, 0, 6.3); ctx.fill();
-        }
-        ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-      }
-      if (music.vignette) {
-        var vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.82);
-        vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(5,9,22,0.4)');
-        ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-      }
-      if (music.grain) {
-        ctx.globalAlpha = 0.035;
-        var ox = (Math.random() * 96) | 0, oy = (Math.random() * 96) | 0;
-        for (var x = -ox; x < W; x += 96) for (var y = -oy; y < H; y += 96) ctx.drawImage(grainTile(), x, y);
-        ctx.globalAlpha = 1;
-      }
-      ctx.restore();
-    } catch (e) {}
-  }
+  // ---------- пост-обработка вынесена в js/core/postfx.mjs ----------
+  var postFx = createPostFx({
+    get ctx() { return ctx; }, get dpr() { return dpr; },
+    get W() { return W; }, get H() { return H; },
+    get t() { return t; }, get GX() { return GX; }, get music() { return music; }
+  });
 
   function render() {
     if (hn.on) { drawHn(); return; }
@@ -11629,7 +11583,7 @@
     drawPopups();
     drawAtm();
     drawNightOverlay();
-    drawPostFx();
+    postFx.draw();
     drawShopHint();
     drawSpotHint();
     drawStormFx();
@@ -12314,10 +12268,24 @@
   var swAuto = document.getElementById('autoSwitch');
   var swMat = document.getElementById('matSwitch');
   var swFps = document.getElementById('fpsSwitch'), swPing = document.getElementById('pingSwitch'); var swHq = document.getElementById('hqSwitch'); var swBm = document.getElementById('bmSwitch');
-  var swVig = document.getElementById('vignetteSwitch'), swBloom = document.getElementById('bloomSwitch');
-  var swGrain = document.getElementById('grainSwitch'), swParts = document.getElementById('particlesSwitch');
-  var swShake = document.getElementById('shakeSwitch'), swAnim = document.getElementById('uiAnimSwitch');
-  var presetBtns = Array.prototype.slice.call(document.querySelectorAll('[data-preset]'));
+  // Настройки графики и вкладки — отдельный модуль с явным API.
+  var settings = createSettings({
+    music: music,
+    onChange: function () { saveMusic(); sync(); sfx('pick'); },
+    toast: function (txt, ms) { toast(txt, ms); },
+    setGraphicsMode: function (on) {
+      try {
+        localStorage.setItem(GXMODE, on ? 'hd' : 'lite');
+        localStorage.setItem('chk_gfx2_hd_default', '1');
+        gxSet(on); gxSwUi();
+      } catch (e) {}
+    },
+    setQuality: function (q) {
+      PERF.q = q;
+      try { localStorage.setItem('chekushka-perf-q', String(q)); } catch (e) {}
+      resize();
+    }
+  });
   var elPerf = document.getElementById('perfChip'), elPerfNow = document.getElementById('perfNow'), lastPerfUi = '', lastPerfNow = '';
   function pingText() {
     if (typeof socket === 'undefined' || !socket) return 'нет сервера';
@@ -12359,14 +12327,7 @@
     swFps.setAttribute('aria-checked', music.fps ? 'true' : 'false');
     swHq.setAttribute('aria-checked', music.hq ? 'true' : 'false'); swBm.setAttribute('aria-checked', music.bm ? 'true' : 'false');
     swPing.setAttribute('aria-checked', music.ping ? 'true' : 'false');
-    swVig.setAttribute('aria-checked', music.vignette ? 'true' : 'false');
-    swBloom.setAttribute('aria-checked', music.bloom ? 'true' : 'false');
-    swGrain.setAttribute('aria-checked', music.grain ? 'true' : 'false');
-    swParts.setAttribute('aria-checked', music.particles ? 'true' : 'false');
-    swShake.setAttribute('aria-checked', music.shake ? 'true' : 'false');
-    swAnim.setAttribute('aria-checked', music.uiAnim ? 'true' : 'false');
-    document.body.classList.toggle('no-uianim', !music.uiAnim);
-    presetBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-preset') === music.preset ? 'true' : 'false'); });
+    settings.sync();
     vol.value = Math.round(music.vol * 100);
     trackBtns.forEach(function (b, i) { b.setAttribute('aria-checked', i === music.track ? 'true' : 'false'); });
   }
@@ -12383,51 +12344,6 @@
   swPing.addEventListener('click', function () { music.ping = !music.ping; saveMusic(); sync(); sfx('pick'); if (music.ping) pingSend(); perfUi(); });
   swSfx.addEventListener('click', function () { music.sfx = !music.sfx; saveMusic(); sync(); if (music.sfx) sfx('pick'); });
   vol.addEventListener('input', function () { music.vol = vol.value / 100; audio.volume = music.vol; saveMusic(); });
-
-  // Графические пресеты: один клик меняет и HD-режим, и эффекты, и чёткость.
-  function applyPreset(name) {
-    var ps = {
-      lite:  { gx: false, hq: false, vignette: false, bloom: false, grain: false, particles: false, shake: false, uiAnim: false, q: 0.7 },
-      hd:    { gx: true,  hq: false, vignette: true,  bloom: true,  grain: false, particles: true,  shake: true,  uiAnim: true,  q: 1 },
-      ultra: { gx: true,  hq: true,  vignette: true,  bloom: true,  grain: true,  particles: true,  shake: true,  uiAnim: true,  q: 1 }
-    };
-    var p = ps[name]; if (!p) return;
-    music.preset = name;
-    music.hq = p.hq; music.vignette = p.vignette; music.bloom = p.bloom; music.grain = p.grain;
-    music.particles = p.particles; music.shake = p.shake; music.uiAnim = p.uiAnim;
-    try { localStorage.setItem(GXMODE, p.gx ? 'hd' : 'lite'); localStorage.setItem('chk_gfx2_hd_default', '1'); } catch (e) {}
-    try { gxSet(p.gx); gxSwUi(); } catch (e) {}
-    if (PERF.q !== p.q) {
-      PERF.q = p.q;
-      try { localStorage.setItem('chekushka-perf-q', String(p.q)); } catch (e) {}
-      resize();
-    }
-    saveMusic(); sync(); sfx('pick');
-    try { toast('Графика: ' + ({ lite: 'экономия', hd: 'качество', ultra: 'максимум' })[name], 2200); } catch (e) {}
-  }
-  presetBtns.forEach(function (b) { b.addEventListener('click', function () { applyPreset(b.getAttribute('data-preset')); }); });
-  function bindFxSwitch(el, key) { el.addEventListener('click', function () { music[key] = !music[key]; saveMusic(); sync(); sfx('pick'); }); }
-  bindFxSwitch(swVig, 'vignette'); bindFxSwitch(swBloom, 'bloom'); bindFxSwitch(swGrain, 'grain');
-  bindFxSwitch(swParts, 'particles'); bindFxSwitch(swShake, 'shake'); bindFxSwitch(swAnim, 'uiAnim');
-
-  // Вкладки настроек
-  (function initSettingsTabs() {
-    var nav = document.getElementById('setTabs');
-    if (!nav) return;
-    var tabs = Array.prototype.slice.call(nav.querySelectorAll('[data-tab]'));
-    var panes = Array.prototype.slice.call(document.querySelectorAll('.stabpane'));
-    function select(name) {
-      tabs.forEach(function (b) {
-        var on = b.getAttribute('data-tab') === name;
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      panes.forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== name; });
-      var sheet = document.querySelector('#overlay .sheet'); if (sheet) sheet.scrollTop = 0;
-    }
-    tabs.forEach(function (b) { b.addEventListener('click', function () { select(b.getAttribute('data-tab')); }); });
-  })();
-  sync();
 
   var settingsOpen = false, upOpen = false, logOpen = false, washOpen = false, busOpen = false, invOpen = false;
   function syncPause() { paused = settingsOpen || upOpen || logOpen || washOpen || busOpen || invOpen || menuOpen || lobbyOpen || phoneOpen || miniOpen || tripMenuOpen || sqOpen || fshopOpen || whOpen || dlgOpened || finOn || !!(fsh && fsh.open); if (paused) { input.left = input.right = false; thr.key = thr.ptr = thr.btn = false; } }

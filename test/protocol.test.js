@@ -93,7 +93,7 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal((html.match(/<html lang="ru">/g) || []).length, 1);
   assert.equal((html.match(/data:[a-z]+\/[\w+-]+;base64,/g) || []).length, 0, 'медиа должно быть вынесено из HTML');
   assert.match(html, /href="\/css\/game\.css"/);
-  assert.match(html, /src="\/js\/game\.js"/);
+  assert.match(html, /src="\/js\/game\.mjs"/);
   assert.doesNotMatch(html, /freezeNote|Важное объявление автора/);
   assert.equal((html.match(/data-tab="/g) || []).length, 5, 'должны быть 5 вкладок настроек');
   assert.equal((html.match(/data-preset="/g) || []).length, 3, 'должны быть 3 пресета графики');
@@ -105,7 +105,7 @@ test('HTTP отдаёт клиент, socket.io и health-check', async () => {
   assert.equal(clientJs.status, 200);
   assert.match(await clientJs.text(), /socket\.io/);
 
-  const gameJs = await fetch(`${BASE}/js/game.js`);
+  const gameJs = await fetch(`${BASE}/js/game.mjs`);
   assert.equal(gameJs.status, 200);
   assert.match(gameJs.headers.get('content-type'), /javascript/);
   assert.doesNotMatch(await gameJs.text(), /data:image\/webp;base64,/);

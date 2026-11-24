@@ -12,6 +12,7 @@ const STATIC_DIRS = new Set(['assets', 'css', 'js']);
 const MIME = {
   '.css': 'text/css; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.webp': 'image/webp',
   '.png': 'image/png',
