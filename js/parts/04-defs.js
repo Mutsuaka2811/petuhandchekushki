@@ -1525,23 +1525,46 @@ function accSet(s, i) {
     buildAcc(); if (typeof netProfile === 'function') netProfile();
   }
 
+function accIcon(name) {
+    var n = String(name || '').toLowerCase();
+    if (n.indexOf('без') >= 0) return '✕';
+    if (n.indexOf('корон') >= 0) return '👑';
+    if (n.indexOf('цилиндр') >= 0) return '🎩';
+    if (n.indexOf('кепк') >= 0) return '🧢';
+    if (n.indexOf('колпак') >= 0) return '🎅';
+    if (n.indexOf('котелок') >= 0) return '⛑';
+    if (n.indexOf('очк') >= 0 || n.indexOf('моно') >= 0) return '🕶';
+    if (n.indexOf('бабоч') >= 0) return '🦋';
+    if (n.indexOf('шарф') >= 0) return '🧣';
+    if (n.indexOf('цеп') >= 0) return '⛓';
+    if (n.indexOf('кулон') >= 0) return '📿';
+    if (n.indexOf('бургер') >= 0) return '🍔';
+    return '🎁';
+  }
+
 function buildAcc() {
     var boxes = document.querySelectorAll('.accs');
     for (var q = 0; q < boxes.length; q++) {
       var box = boxes[q]; box.textContent = '';
       for (var s = 0; s < 3; s++) {
         (function (s) {
-          var row = document.createElement('div'); row.className = 'accrow';
-          var t = document.createElement('span'); t.className = 'acct'; t.textContent = ACC_TITLES[s]; row.appendChild(t);
+          var sec = document.createElement('div'); sec.className = 'accsec';
+          var head = document.createElement('div'); head.className = 'acct'; head.textContent = ACC_TITLES[s];
+          sec.appendChild(head);
+          var grid = document.createElement('div'); grid.className = 'acgrid';
           ACC[s].forEach(function (a, i) {
-            var ok = accOk(s, i), b = document.createElement('button'); b.type = 'button'; b.className = 'ac';
-            b.textContent = ok ? a.n : '🔒 ' + a.n; b.disabled = false;
+            var ok = accOk(s, i), selected = myAcc[s] === i;
+            var b = document.createElement('button'); b.type = 'button';
+            b.className = 'ac' + (ok ? '' : ' locked');
+            b.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            b.setAttribute('aria-label', (ok ? '' : 'Заблокировано: ') + a.n);
+            b.innerHTML = '<span class="aci">' + (ok ? accIcon(a.n) : '🔒') + '</span>' +
+              '<span class="acn">' + a.n + '</span>' + (selected ? '<span class="ack">✓</span>' : '');
             if (!ok) b.title = 'Откроется за ачивку';
-            b.setAttribute('aria-pressed', myAcc[s] === i ? 'true' : 'false');
             b.addEventListener('click', function () { accSet(s, i); });
-            row.appendChild(b);
+            grid.appendChild(b);
           });
-          box.appendChild(row);
+          sec.appendChild(grid); box.appendChild(sec);
         })(s);
       }
     }
